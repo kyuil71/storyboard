@@ -76,25 +76,6 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
             const [editImageInstruction, setEditImageInstruction] = useState('');
             const [characterFeatures, setCharacterFeatures] = useState('');
             const [selectedImage, setSelectedImage] = useState(null);
-            const [isFullScreen, setIsFullScreen] = useState(false);
-
-            useEffect(() => {
-                const handleFullScreenChange = () => setIsFullScreen(!!document.fullscreenElement);
-                document.addEventListener('fullscreenchange', handleFullScreenChange);
-                return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
-            }, []);
-
-            const toggleFullScreen = () => {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch((err) => {
-                        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-                    });
-                } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    }
-                }
-            };
 
             const handleDownloadPdf = () => {
                 window.scrollTo(0, 0);
@@ -151,7 +132,15 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
 
             const analyzeScenario = async (text, count) => {
                 const styleInstruction = "'continuous line drawing, black ink on white paper, with soft watercolor coloring, architectural sketch style, artistic, minimalist yet colorful'";
-                const systemPrompt = `You are a professional storyboard artist. Analyze the provided user scenario and split it into exactly ${count} chronological scenes. Also, define the main character's consistent visual features. For each scene, provide id, description (KR), imagePrompt (EN). Style: ${styleInstruction}. Return raw JSON only.`;
+                // Improved prompt to be extremely specific about keys and JSON structure
+                const systemPrompt = `You are a professional storyboard artist. Analyze the provided user scenario and split it into exactly ${count} chronological scenes.
+                Return the result as a valid JSON object with EXACTLY these keys:
+                "characterFeatures": (string describing the main character),
+                "scenes": [
+                  { "id": 1, "description": "Korean summary", "imagePrompt": "English detailed prompt" }
+                ]
+                Visual Style: ${styleInstruction}. IMPORTANT: Return ONLY valid JSON. Do NOT include markdown code blocks.`;
+                
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userApiKey}`, {
                         method: 'POST',
@@ -162,12 +151,24 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
                             generationConfig: { responseMimeType: "application/json" }
                         })
                     });
-                    if (!response.ok) throw new Error(`Scenario analysis failed: ${response.status}`);
+                    if (!response.ok) throw new Error(`네트워크 오류가 발생했습니다. (Status: ${response.status})`);
                     const data = await response.json();
-                    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!resultText) throw new Error('No data returned from AI');
-                    return JSON.parse(resultText);
-                } catch (error) { console.error("Analysis Error:", error); throw error; }
+                    let resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!resultText) throw new Error('AI로부터 응답 데이터를 받지 못했습니다.');
+                    
+                    // Improved JSON extraction with regex
+                    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        // Fix for cases where model might return the array directly or with different key names
+                        if (Array.isArray(parsed)) return { scenes: parsed, characterFeatures: "" };
+                        return parsed;
+                    }
+                    throw new Error("응답에서 유효한 JSON 형식을 찾을 수 없습니다.");
+                } catch (error) { 
+                    console.error("Analysis Error:", error); 
+                    throw error;
+                }
             };
 
             const generateImage = async (prompt, onRetryMessage) => {
@@ -230,8 +231,25 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
                 setScenes([]);
                 try {
                     const analysisResult = await analyzeScenario(inputScenario, sceneCount);
-                    setCharacterFeatures(analysisResult.characterFeatures);
-                    const initialScenes = analysisResult.scenes.map(scene => ({
+                    
+                    // Improved handling for diverse AI response structures
+                    let finalScenes = [];
+                    if (analysisResult && Array.isArray(analysisResult.scenes)) {
+                        finalScenes = analysisResult.scenes;
+                    } else if (Array.isArray(analysisResult)) {
+                        finalScenes = analysisResult;
+                    } else if (analysisResult && typeof analysisResult === 'object') {
+                        // Look for any array key if 'scenes' is missing
+                        const possibleKey = Object.keys(analysisResult).find(key => Array.isArray(analysisResult[key]));
+                        if (possibleKey) finalScenes = analysisResult[possibleKey];
+                    }
+
+                    if (finalScenes.length === 0) {
+                        throw new Error("분석 데이터에서 장면 정보를 찾을 수 없습니다. 시나리오를 조금 다르게 입력해 보세요.");
+                    }
+
+                    setCharacterFeatures(analysisResult.characterFeatures || characterFeatures || '');
+                    const initialScenes = finalScenes.map(scene => ({
                         ...scene, imageUrl: null, isLoading: true, imageInstruction: ''
                     }));
                     setScenes(initialScenes);
@@ -245,7 +263,7 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
                             continue;
                         }
                         setProgress({ current: i + 1, total: updatedScenes.length, message: `${i + 1}번째 장면 생성 중...` });
-                        const consistentPrompt = `${updatedScenes[i].imagePrompt}. Character: ${analysisResult.characterFeatures}`;
+                        const consistentPrompt = `${updatedScenes[i].imagePrompt}. Character: ${analysisResult.characterFeatures || characterFeatures}`;
                         if (i > 0) await delay(4000); 
                         const imageUrl = await generateImage(consistentPrompt, (msg) => setProgress(prev => ({ ...prev, message: msg })));
                         if (imageUrl === null) consecutiveFailures++; else consecutiveFailures = 0;
@@ -253,7 +271,10 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
                         setScenes([...updatedScenes]);
                     }
                     setStatus('complete');
-                } catch (err) { setStatus('error'); setErrorMsg('작업 중 오류가 발생했습니다.\n' + err.message); }
+                } catch (err) { 
+                    setStatus('error'); 
+                    setErrorMsg('작업 중 오류가 발생했습니다.\n' + (err.message || '데이터 처리 오류')); 
+                }
             };
 
             const handleReset = () => { setStatus('idle'); setScenes([]); setErrorMsg(''); setEditingSceneId(null); setCharacterFeatures(''); setSelectedImage(null); };
@@ -347,17 +368,26 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
 
                     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                         {errorMsg ? (
-                            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3 text-red-700">
-                                <Icon name="alert-circle" className="mt-0.5 shrink-0" /><div className="flex-1"><h3 className="text-sm sm:text-base font-bold">알림</h3><p className="text-xs sm:text-sm whitespace-pre-line mt-1">{errorMsg}</p><div className="mt-2 flex gap-3">{status === 'error' && <button onClick={handleGenerate} className="text-xs sm:text-sm font-semibold underline hover:text-red-800">다시 시도하기</button>}</div></div>
+                            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3 text-red-700 animate-in slide-in-from-top-2">
+                                <Icon name="alert-circle" className="mt-0.5 shrink-0" size={20} /><div className="flex-1"><h3 className="text-sm sm:text-base font-bold">알림</h3><p className="text-xs sm:text-sm whitespace-pre-line mt-1">{errorMsg}</p><div className="mt-2 flex gap-3">{status === 'error' && <button onClick={handleGenerate} className="text-xs sm:text-sm font-semibold underline hover:text-red-800">다시 시도하기</button>}</div></div>
                             </div>
                         ) : null}
 
                         {status === 'idle' ? (
                             <div className="max-w-3xl mx-auto animate-fade-in">
                                 <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-8 border border-gray-100">
+                                    {/* Header Graphic for Scenario Step */}
+                                    <div className="text-center mb-10">
+                                        <div className="flex items-center justify-center gap-2 mb-3">
+                                           <div className="bg-blue-600 p-1.5 rounded-lg shadow-sm"><Icon name="sparkles" className="text-white" size={20} /></div>
+                                           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">AI Storyboard Maker</h2>
+                                           <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-1 shadow-sm">Gemini Powered</span>
+                                        </div>
+                                    </div>
+
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-slate-700 mb-2">시나리오 입력</label>
-                                        <textarea value={inputScenario} onChange={(e) => setInputScenario(e.target.value)} className="w-full h-48 sm:h-64 p-3 sm:p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm leading-relaxed transition-all bg-slate-50 mb-6 outline-none text-gray-500" />
+                                        <textarea value={inputScenario} onChange={(e) => setInputScenario(e.target.value)} className="w-full h-48 sm:h-64 p-3 sm:p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm leading-relaxed transition-all bg-slate-50 mb-6 outline-none text-gray-500 font-normal" />
                                     </div>
                                     <div className="mb-8">
                                         <label className="block text-sm font-bold text-slate-700 mb-2">제작을 원하는 스토리보드 Scene 갯수</label>
@@ -383,7 +413,7 @@ AI는 즉시 개인의 이동 경로와 탄소 발자국 목표에 맞는 모든
                                                 {status === 'complete' && !scene.isLoading && <button onClick={(e) => { e.stopPropagation(); startEditing(scene); }} className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full text-gray-500 hover:text-blue-600 hover:bg-white transition-colors print:hidden z-10 shadow-sm"><Icon name="edit-3" /></button>}
                                                 <div className="bg-gray-50 px-3 sm:px-4 py-2 border-b border-gray-100 flex justify-between items-center"><span className="font-bold text-sm sm:text-base text-gray-700 font-mono">SCENE #{scene.id.toString().padStart(2, '0')}</span>{editingSceneId === scene.id && <div className="flex gap-1 print:hidden"><button onClick={() => saveEditing(scene.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Icon name="check" /></button><button onClick={cancelEditing} className="p-1 text-red-600 hover:bg-red-50 rounded"><Icon name="x" /></button></div>}</div>
                                                 <div className="aspect-[4/3] bg-gray-100 relative group border-b border-gray-100 flex items-center justify-center overflow-hidden">{scene.isLoading ? <div className="flex flex-col items-center text-blue-500 animate-pulse"><Icon name="loader-2" className="animate-spin mb-2" /><span className="text-[10px] sm:text-xs font-medium">Drawing...</span></div> : scene.imageUrl ? <><img src={scene.imageUrl} alt={`Scene ${scene.id}`} className="w-full h-full object-cover mix-blend-multiply transition-transform duration-700 hover:scale-105 cursor-zoom-in" onClick={() => setSelectedImage(scene.imageUrl)} />{!editingSceneId && <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />}</> : <div className="flex flex-col items-center justify-center p-4 sm:p-6 text-center w-full h-full bg-gray-50"><Icon name="layout" className="text-gray-300 mb-2" size={24} /><p className="text-[10px] sm:text-xs font-bold text-gray-400">이미지 없음</p></div>}</div>
-                                                <div className="p-3 sm:p-4 flex-grow flex flex-col"><h4 className="text-[10px] sm:text-xs uppercase tracking-wide text-gray-400 font-bold mb-1.5 sm:mb-2 font-mono">Description</h4>{editingSceneId === scene.id ? <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md text-xs sm:text-sm focus:ring-blue-500 focus:border-blue-500 resize-y" rows={3}/> : <p className="text-xs sm:text-sm text-gray-700 leading-relaxed overflow-y-auto max-h-24 sm:max-h-32 scrollbar-thin scrollbar-thumb-gray-200">{scene.description}</p>}<div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100 print:hidden"><div className="flex justify-between items-center mb-1"><h4 className="text-[10px] sm:text-xs uppercase tracking-wide text-gray-400 font-bold font-mono">Image Instruction</h4>{!editingSceneId && <button onClick={() => handleCopyPrompt(scene.imagePrompt)} className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-gray-100"><Icon name="copy" size={12} /></button>}</div>{editingSceneId === scene.id ? <textarea value={editImageInstruction} onChange={(e) => setEditImageInstruction(e.target.value)} placeholder="수정 지시를 입력하세요" className="w-full p-2 border border-gray-300 rounded-md text-[10px] sm:text-xs focus:ring-blue-500 focus:border-blue-500 resize-y" rows={2}/> : <p className="text-[9px] sm:text-[10px] text-gray-400 font-mono truncate hover:whitespace-normal hover:bg-gray-50 hover:absolute hover:z-10 hover:shadow-lg hover:p-2 hover:rounded hover:w-[calc(100%-1.5rem)] sm:hover:w-64 bg-white transition-all cursor-help">{scene.imageInstruction || scene.imagePrompt}</p>}</div></div>
+                                                <div className="p-3 sm:p-4 flex-grow flex flex-col"><h4 className="text-[10px] sm:text-xs uppercase tracking-wide text-gray-400 font-bold mb-1.5 sm:mb-2 font-mono">Description</h4>{editingSceneId === scene.id ? <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md text-xs sm:text-sm focus:ring-blue-500 focus:border-blue-500 resize-y" rows={3}/> : <p className="text-xs sm:text-sm text-gray-700 leading-relaxed overflow-y-auto max-h-24 sm:max-h-32 scrollbar-thin scrollbar-thumb-gray-200">{scene.description}</p>}<div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100 print:hidden"><div className="flex justify-between items-center mb-1"><h4 className="text-[10px] sm:text-xs uppercase tracking-wide text-gray-400 font-bold font-mono">Image Instruction</h4>{!editingSceneId && <button onClick={() => handleCopyPrompt(scene.imagePrompt)} className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-gray-100"><Icon name="copy" size={12} /></button>}</div>{editingSceneId === scene.id ? <textarea value={editImageInstruction} onChange={(e) => setEditImageInstruction(e.target.value)} placeholder="수정 지시를 입력하세요" className="w-full p-2 border border-gray-300 rounded-md text-[10px] sm:text-xs focus:ring-blue-500 focus:border-blue-500 resize-y" rows={2}/> : <p className="text-[9px] sm:text-[10px] text-gray-400 font-mono truncate hover:whitespace-normal hover:bg-gray-50 hover:absolute hover:z-10 hover:shadow-lg hover:p-2 hover:rounded hover:w-[calc(100%-1.5rem)] sm:hover:w-64 bg-white transition-all cursor-help" title={scene.imagePrompt}>{scene.imageInstruction || scene.imagePrompt}</p>}</div></div>
                                             </div>
                                         ))}
                                     </div>
