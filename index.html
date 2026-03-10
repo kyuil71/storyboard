@@ -96,7 +96,13 @@
             const [characterFeatures, setCharacterFeatures] = useState('');
             const [selectedImage, setSelectedImage] = useState(null);
 
-            // --- 신규 PDF 저장 로직 (window.print 기반 및 포커스 보강) ---
+            useEffect(() => {
+                const handleFullScreenChange = () => {}; // Removed Fullscreen toggle logic
+                document.addEventListener('fullscreenchange', handleFullScreenChange);
+                return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+            }, []);
+
+            // --- PDF 저장 로직 (window.print 기반) ---
             const handleDownloadPdf = async () => {
                 const pdfLayout = document.getElementById('hidden-pdf-layout');
                 if (!pdfLayout || scenes.length === 0) return;
@@ -112,9 +118,8 @@
                 
                 try {
                     await Promise.all(imagePromises);
-                    // 브라우저 렌더링 및 포커스 확보를 위한 지연
                     setTimeout(() => {
-                        window.focus(); // 창에 포커스를 주어 인쇄 창 차단 방지
+                        window.focus(); 
                         window.print();
                         setStatus(prevStatus);
                     }, 500);
@@ -232,10 +237,18 @@
 
             const handleGenerate = async () => {
                 if (!inputScenario.trim()) return;
+
+                // --- Wake Lock Request (Mobile screen-on persistence) ---
+                let wakeLock = null;
+                if ('wakeLock' in navigator) {
+                    try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { console.warn("Wake Lock failed"); }
+                }
+
                 setStatus('analyzing');
                 setErrorMsg('');
                 setProgress({ current: 0, total: sceneCount, message: 'AI가 시나리오를 분석하고 장면을 구성중입니다...' });
                 setScenes([]);
+
                 try {
                     const analysisResult = await analyzeScenario(inputScenario, sceneCount);
                     
@@ -260,6 +273,7 @@
                     }));
                     setScenes(initialScenes);
                     setStatus('generating');
+
                     const updatedScenes = [...initialScenes];
                     let consecutiveFailures = 0;
                     for (let i = 0; i < updatedScenes.length; i++) {
@@ -280,6 +294,9 @@
                 } catch (err) { 
                     setStatus('error'); 
                     setErrorMsg('작업 중 오류가 발생했습니다.\n' + (err.message || '데이터 처리 오류')); 
+                } finally {
+                    // --- Release Wake Lock ---
+                    if (wakeLock) { wakeLock.release().then(() => { wakeLock = null; }); }
                 }
             };
 
@@ -348,7 +365,7 @@
                                         <Icon name="external-link" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                     </a>
                                 </div>
-                                <button onClick={() => userApiKey.trim() && setIsConfigured(true)} disabled={!userApiKey.trim()} className="w-full py-4 rounded-2xl font-bold text-white shadow-md transition-all transform active:scale-95 bg-indigo-600 hover:bg-indigo-700">스토리보드 도구 시작</button>
+                                <button onClick={() => userApiKey.trim() && setIsConfigured(true)} disabled={!userApiKey.trim()} className={`w-full py-4 rounded-2xl font-bold text-white shadow-md transition-all transform active:scale-95 bg-indigo-600 hover:bg-indigo-700`}>스토리보드 도구 시작</button>
                             </div>
                             <p className="mt-8 text-[10px] text-slate-400 text-center leading-relaxed">입력하신 API 키는 브라우저에 임시로만 유지되며 서버에 저장되지 않습니다.</p>
                         </div>
@@ -364,7 +381,8 @@
                                 <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg shadow-sm"><Icon name="sparkles" className="text-white" size={20} /></div>
                                 <h1 className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 uppercase">AI Storyboard Maker</h1>
                                 <span className="text-[10px] sm:text-xs font-bold text-white bg-blue-600 px-1.5 py-0.5 rounded shadow-sm">Gemini Powered</span>
-                                {(status === 'complete' || status === 'generating' || scenes.length > 0) && (
+                                {/* Changed: Buttons only appear when status is 'complete' */}
+                                {status === 'complete' && (
                                     <div className="flex items-center gap-2 ml-1 sm:ml-4">
                                         <button onClick={handleReset} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm"><Icon name="rotate-ccw" /> <span>다시 만들기</span></button>
                                         <button onClick={handleDownloadPdf} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm"><Icon name="download" /> <span>PDF 저장</span></button>
@@ -394,7 +412,6 @@
                                            <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-1 shadow-sm">Gemini Powered</span>
                                         </div>
                                     </div>
-
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-slate-700 mb-2">시나리오 입력</label>
                                         <textarea value={inputScenario} onChange={(e) => setInputScenario(e.target.value)} className="w-full h-48 sm:h-64 p-3 sm:p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm leading-relaxed transition-all bg-slate-50 mb-6 outline-none text-gray-500 font-normal" />
@@ -434,49 +451,27 @@
 
                         {/* --- 숨겨진 PDF 출력용 레이아웃 (window.print 전용) --- */}
                         <div id="hidden-pdf-layout" style={{ display: 'none' }}>
-                            {/* 표지 페이지 */}
                             <div className="pdf-page">
-                                <div className="flex items-center gap-3 mb-8 pb-4 border-b-2 border-gray-900">
-                                    <Icon name="sparkles" size={32} />
-                                    <h1 className="text-4xl font-extrabold font-mono uppercase">Storyboard Project</h1>
-                                </div>
-                                <div className="flex-grow">
-                                    <h2 className="text-xl font-bold uppercase text-gray-500 mb-4 font-mono tracking-tight">Project Scenario</h2>
-                                    <div className="whitespace-pre-wrap text-lg leading-relaxed text-gray-800 font-serif border-l-4 border-gray-100 pl-6">{inputScenario}</div>
-                                </div>
-                                <div className="mt-auto pt-8 text-sm text-gray-400 flex justify-between font-mono uppercase border-t border-gray-100">
-                                    <span>AI Storyboard Maker</span>
-                                    <span>Created by Gemini 3.1 Flash</span>
-                                </div>
+                                <div className="flex items-center gap-3 mb-8 pb-4 border-b-2 border-gray-900"><Icon name="sparkles" size={32} /><h1 className="text-4xl font-extrabold font-mono uppercase">Storyboard Project</h1></div>
+                                <div className="flex-grow"><h2 className="text-xl font-bold uppercase text-gray-500 mb-4 font-mono tracking-tight">Project Scenario</h2><div className="whitespace-pre-wrap text-lg leading-relaxed text-gray-800 font-serif border-l-4 border-gray-100 pl-6">{inputScenario}</div></div>
+                                <div className="mt-auto pt-8 text-sm text-gray-400 flex justify-between font-mono uppercase border-t border-gray-100"><span>AI Storyboard Maker</span><span>Created by Gemini 3.1 Flash</span></div>
                             </div>
-                            
-                            {/* 전체 요약 리스트 페이지 */}
                             <div className="pdf-page">
                                 <h2 className="text-xl font-bold mb-6 border-b pb-2 font-mono uppercase tracking-widest">Scenes Overview</h2>
                                 <div className="flex flex-col gap-8">
                                     {scenes.map(scene => (
                                         <div key={`pdf-sum-${scene.id}`} className="flex gap-6 pb-6 border-b border-gray-50 page-break-inside-avoid last:border-0">
-                                            <div className="w-72 aspect-[4/3] shrink-0 border border-gray-100 bg-gray-50 overflow-hidden shadow-sm">
-                                                <img src={scene.imageUrl} className="w-full h-full object-cover" />
-                                            </div>
-                                            <div className="flex-1 flex flex-col">
-                                                <h3 className="font-bold text-xl font-mono mb-2 text-blue-600">SCENE #{scene.id.toString().padStart(2, '0')}</h3>
-                                                <p className="text-md text-gray-700 leading-relaxed font-medium">{scene.description}</p>
-                                                <div className="mt-auto bg-gray-50 p-2 text-[8px] text-gray-300 font-mono break-all uppercase border border-gray-100 leading-tight">PROMPT: {scene.imagePrompt}</div>
-                                            </div>
+                                            <div className="w-72 aspect-[4/3] shrink-0 border border-gray-100 bg-gray-50 overflow-hidden shadow-sm"><img src={scene.imageUrl} className="w-full h-full object-cover" /></div>
+                                            <div className="flex-1 flex flex-col"><h3 className="font-bold text-xl font-mono mb-2 text-blue-600">SCENE #{scene.id.toString().padStart(2, '0')}</h3><p className="text-md text-gray-700 leading-relaxed font-medium">{scene.description}</p><div className="mt-auto bg-gray-50 p-2 text-[8px] text-gray-300 font-mono break-all uppercase border border-gray-100 leading-tight">PROMPT: {scene.imagePrompt}</div></div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-
-                            {/* 개별 장면 대지 페이지 */}
                             {scenes.map(scene => (
                                 <div key={`pdf-full-${scene.id}`} className="pdf-page flex items-center justify-center">
                                     <div className="w-full">
                                         <div className="mb-6 font-mono font-bold text-3xl text-gray-900 tracking-tighter border-b-2 border-gray-900 inline-block pb-1">SCENE #{scene.id}</div>
-                                        <div className="aspect-[4/3] w-full border border-gray-100 shadow-md mb-8 overflow-hidden bg-gray-50">
-                                            <img src={scene.imageUrl} className="w-full h-full object-cover" />
-                                        </div>
+                                        <div className="aspect-[4/3] w-full border border-gray-100 shadow-md mb-8 overflow-hidden bg-gray-50"><img src={scene.imageUrl} className="w-full h-full object-cover" /></div>
                                         <div className="bg-gray-50 p-8 rounded-lg border border-gray-100">
                                             <h4 className="text-xs font-bold text-gray-400 uppercase mb-2 font-mono">Description</h4>
                                             <p className="text-2xl text-gray-800 font-serif leading-relaxed text-center italic">{scene.description}</p>
@@ -486,7 +481,6 @@
                             ))}
                         </div>
 
-                        {/* 이미지 확대 모달 */}
                         {selectedImage && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 transition-all animate-in fade-in" onClick={() => setSelectedImage(null)}>
                                 <div className="relative max-w-5xl max-h-full">
