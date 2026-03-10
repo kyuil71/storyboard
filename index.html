@@ -10,7 +10,6 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -23,11 +22,34 @@
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .scrollbar-thin::-webkit-scrollbar { width: 4px; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+        /* --- 프린트 최적화 스타일 (window.print 기반) --- */
         @media print {
-            .page-break-inside-avoid { page-break-inside: avoid; }
-            .page-break-after-always { page-break-after: always; }
-            body { background: white; }
-            button, header { display: none !important; }
+            /* 배경색 및 이미지 강제 출력 */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            
+            /* 여백 및 사이즈 설정 (A4 세로) */
+            @page { size: A4 portrait; margin: 0; }
+            body { background: white !important; margin: 0; padding: 0; }
+            
+            /* 프린트 시 불필요한 UI 숨기기 */
+            header, button, .no-print, .fixed, #storyboard-result, .alert-box { display: none !important; }
+            
+            /* PDF 레이아웃 강제 노출 */
+            #hidden-pdf-layout { display: block !important; position: static !important; width: 100% !important; }
+            
+            /* 페이지 넘김 설정 */
+            .pdf-page { 
+                page-break-after: always !important; 
+                break-after: page !important;
+                display: flex !important;
+                flex-direction: column !important;
+                min-height: 296mm; /* A4 높이 */
+                padding: 20mm !important;
+                box-sizing: border-box !important;
+                background: white !important;
+            }
+            .page-break-inside-avoid { page-break-inside: avoid !important; }
         }
     </style>
 </head>
@@ -48,22 +70,11 @@
         };
 
         const StoryboardApp = () => {
-            // --- Helper: Initial State from LocalStorage ---
-            const getSaved = (key, def) => {
-                const saved = localStorage.getItem('story_image_maker_' + key);
-                if (saved === null) return def;
-                try {
-                    return JSON.parse(saved);
-                } catch (e) {
-                    return saved;
-                }
-            };
-
             // --- API Configuration ---
-            const [userApiKey, setUserApiKey] = useState(() => getSaved('userApiKey', ""));
-            const [isConfigured, setIsConfigured] = useState(() => getSaved('isConfigured', false));
+            const [userApiKey, setUserApiKey] = useState("");
+            const [isConfigured, setIsConfigured] = useState(false);
 
-            // --- Initial Data (Modified Scenario Case) ---
+            // --- Initial Data ---
             const defaultScenario = `[사례] 가정에서는 '프롬프트 기반 생활'이 일상화되었다. 
 아침에 일어나면 홈 AI에게 "오늘의 기후 예측(습도 85%, 국지성 폭우 가능), 에너지 최적화 경로, 그리고 레디코어 기준에 맞는 의상 설계"를 프롬프트한다. 
 이동 수단은 공유형 자율주행 포드로, 내부는 내가 설정한 '집'의 환경과 동일하게 동기화된다.
@@ -73,65 +84,45 @@
 잠들기 전, 내일의 날씨와 스케줄에 맞춰 침실의 온습도와 조명이 '수면 최적화 모드'로 서서히 바뀐다.`;
 
             // --- State Management ---
-            const [inputScenario, setInputScenario] = useState(() => getSaved('inputScenario', defaultScenario));
-            const [sceneCount, setSceneCount] = useState(() => getSaved('sceneCount', 10)); 
-            const [scenes, setScenes] = useState(() => getSaved('scenes', []));
-            const [status, setStatus] = useState(() => getSaved('status', 'idle')); // idle, analyzing, generating, complete, error
+            const [inputScenario, setInputScenario] = useState(defaultScenario);
+            const [sceneCount, setSceneCount] = useState(10); 
+            const [scenes, setScenes] = useState([]);
+            const [status, setStatus] = useState('idle'); // idle, analyzing, generating, complete, error
             const [progress, setProgress] = useState({ current: 0, total: 0, message: '' });
             const [errorMsg, setErrorMsg] = useState('');
             const [editingSceneId, setEditingSceneId] = useState(null);
             const [editDescription, setEditDescription] = useState('');
             const [editImageInstruction, setEditImageInstruction] = useState('');
-            const [characterFeatures, setCharacterFeatures] = useState(() => getSaved('characterFeatures', ''));
+            const [characterFeatures, setCharacterFeatures] = useState('');
             const [selectedImage, setSelectedImage] = useState(null);
 
-            // --- Save State to LocalStorage whenever it changes ---
-            useEffect(() => {
-                localStorage.setItem('story_image_maker_userApiKey', JSON.stringify(userApiKey));
-                localStorage.setItem('story_image_maker_isConfigured', JSON.stringify(isConfigured));
-                localStorage.setItem('story_image_maker_inputScenario', JSON.stringify(inputScenario));
-                localStorage.setItem('story_image_maker_sceneCount', JSON.stringify(sceneCount));
-                localStorage.setItem('story_image_maker_scenes', JSON.stringify(scenes));
-                localStorage.setItem('story_image_maker_status', JSON.stringify(status));
-                localStorage.setItem('story_image_maker_characterFeatures', JSON.stringify(characterFeatures));
-            }, [userApiKey, isConfigured, inputScenario, sceneCount, scenes, status, characterFeatures]);
+            // --- 신규 PDF 저장 로직 (window.print 기반 및 포커스 보강) ---
+            const handleDownloadPdf = async () => {
+                const pdfLayout = document.getElementById('hidden-pdf-layout');
+                if (!pdfLayout || scenes.length === 0) return;
 
-            const handleDownloadPdf = () => {
-                window.scrollTo(0, 0);
-                const element = document.getElementById('hidden-pdf-layout'); 
-                if (!element || !window.html2pdf) {
-                    if (!window.html2pdf) alert("PDF 라이브러리를 로드 중입니다. 잠시 후 다시 시도해주세요.");
-                    else alert("저장할 데이터가 준비되지 않았습니다.");
-                    return;
-                }
-                const clone = element.cloneNode(true);
-                clone.style.display = 'block';
-                const container = document.createElement('div');
-                container.style.position = 'absolute';
-                container.style.top = '0px';
-                container.style.left = '0px';
-                container.style.width = '794px'; 
-                container.style.background = '#ffffff'; 
-                container.style.zIndex = '-9999'; 
-                container.appendChild(clone);
-                document.body.appendChild(container);
-
-                const opt = {
-                    margin: 0,
-                    filename: 'AI_Storyboard.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                };
-
-                window.html2pdf().set(opt).from(clone).save().then(() => {
-                    document.body.removeChild(container);
-                }).catch(err => {
-                    console.error("PDF Export Error:", err);
-                    alert("PDF 저장 중 오류가 발생했습니다.");
-                    if (document.body.contains(container)) document.body.removeChild(container);
+                const images = Array.from(pdfLayout.querySelectorAll('img'));
+                const imagePromises = images.map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
                 });
+
+                const prevStatus = status;
+                setStatus('printing'); 
+                
+                try {
+                    await Promise.all(imagePromises);
+                    // 브라우저 렌더링 및 포커스 확보를 위한 지연
+                    setTimeout(() => {
+                        window.focus(); // 창에 포커스를 주어 인쇄 창 차단 방지
+                        window.print();
+                        setStatus(prevStatus);
+                    }, 500);
+                } catch (err) {
+                    console.error("Print Error:", err);
+                    alert("인쇄 준비 중 오류가 발생했습니다.");
+                    setStatus(prevStatus);
+                }
             };
 
             const handleCopyPrompt = (text) => {
@@ -175,9 +166,7 @@
                     
                     const jsonMatch = resultText.match(/\{[\s\S]*\}/);
                     if (jsonMatch) {
-                        const parsed = JSON.parse(jsonMatch[0]);
-                        if (Array.isArray(parsed)) return { scenes: parsed, characterFeatures: "" };
-                        return parsed;
+                        return JSON.parse(jsonMatch[0]);
                     }
                     throw new Error("응답에서 유효한 JSON 형식을 찾을 수 없습니다.");
                 } catch (error) { 
@@ -224,7 +213,6 @@
 
             const regenerateScenePrompt = async (description, imageInstruction) => {
                 const styleInstruction = "consistent professional continuous line drawing, elegant black ink outlines, delicate translucent watercolor washes, minimalist architectural sketch aesthetic, uniform hand-drawn illustration on off-white paper texture";
-                
                 const systemPrompt = `Professional storyboard artist. Maintain the exact same character features: ${characterFeatures}. New prompt for Scene: ${description}. Instruction: ${imageInstruction}. 
                 The prompt must start with character details and end with the visual style: "${styleInstruction}". English raw prompt string only.`;
                 
@@ -262,7 +250,7 @@
                     }
 
                     if (finalScenes.length === 0) {
-                        throw new Error("분석 데이터에서 장면 정보를 찾을 수 없습니다. 시나리오를 조금 다르게 입력해 보세요.");
+                        throw new Error("분석 데이터에서 장면 정보를 찾을 수 없습니다.");
                     }
 
                     const charFeats = analysisResult.characterFeatures || characterFeatures || '';
@@ -281,9 +269,7 @@
                             continue;
                         }
                         setProgress({ current: i + 1, total: updatedScenes.length, message: `${i + 1}번째 장면 생성 중...` });
-                        
                         const consistentPrompt = `${charFeats}. ${updatedScenes[i].imagePrompt}`;
-                        
                         if (i > 0) await delay(4000); 
                         const imageUrl = await generateImage(consistentPrompt, (msg) => setProgress(prev => ({ ...prev, message: msg })));
                         if (imageUrl === null) consecutiveFailures++; else consecutiveFailures = 0;
@@ -299,12 +285,7 @@
 
             const handleReset = () => { 
                 if (confirm('모든 작업 내용이 삭제됩니다. 계속하시겠습니까?')) {
-                    setStatus('idle'); 
-                    setScenes([]); 
-                    setErrorMsg(''); 
-                    setEditingSceneId(null); 
-                    setCharacterFeatures(''); 
-                    setSelectedImage(null); 
+                    setStatus('idle'); setScenes([]); setErrorMsg(''); setEditingSceneId(null); setCharacterFeatures(''); setSelectedImage(null); 
                 }
             };
             
@@ -367,7 +348,7 @@
                                         <Icon name="external-link" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                     </a>
                                 </div>
-                                <button onClick={() => userApiKey.trim() && setIsConfigured(true)} disabled={!userApiKey.trim()} className={`w-full py-4 rounded-2xl font-bold text-white shadow-md transition-all transform active:scale-95 ${userApiKey.trim() ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-300 cursor-not-allowed'}`}>스토리보드 도구 시작</button>
+                                <button onClick={() => userApiKey.trim() && setIsConfigured(true)} disabled={!userApiKey.trim()} className="w-full py-4 rounded-2xl font-bold text-white shadow-md transition-all transform active:scale-95 bg-indigo-600 hover:bg-indigo-700">스토리보드 도구 시작</button>
                             </div>
                             <p className="mt-8 text-[10px] text-slate-400 text-center leading-relaxed">입력하신 API 키는 브라우저에 임시로만 유지되며 서버에 저장되지 않습니다.</p>
                         </div>
@@ -391,14 +372,14 @@
                                 )}
                             </div>
                             <div className="flex items-center">
-                                <button onClick={() => setIsConfigured(false)} className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors underline decoration-dotted">API 키 변경</button>
+                                <button onClick={() => { if(confirm('설정을 초기화하시겠습니까?')) { setIsConfigured(false); setUserApiKey(""); setScenes([]); setStatus('idle'); } }} className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors underline decoration-dotted">API 키 변경</button>
                             </div>
                         </div>
                     </header>
 
                     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                         {errorMsg ? (
-                            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3 text-red-700 animate-in slide-in-from-top-2">
+                            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3 text-red-700 animate-in slide-in-from-top-2 alert-box">
                                 <Icon name="alert-circle" className="mt-0.5 shrink-0" size={20} /><div className="flex-1"><h3 className="text-sm sm:text-base font-bold">알림</h3><p className="text-xs sm:text-sm whitespace-pre-line mt-1">{errorMsg}</p><div className="mt-2 flex gap-3">{status === 'error' && <button onClick={handleGenerate} className="text-xs sm:text-sm font-semibold underline hover:text-red-800">다시 시도하기</button>}</div></div>
                             </div>
                         ) : null}
@@ -451,33 +432,67 @@
                             </div>
                         )}
 
+                        {/* --- 숨겨진 PDF 출력용 레이아웃 (window.print 전용) --- */}
                         <div id="hidden-pdf-layout" style={{ display: 'none' }}>
-                            <div className="pdf-page p-12 bg-white min-h-[297mm] flex flex-col relative page-break-after-always" style={{ pageBreakAfter: 'always', pageBreakInside: 'avoid' }}>
-                                <div className="flex items-center gap-3 mb-8 pb-4 border-b-2 border-gray-900"><Icon name="sparkles" size={32} /><h1 className="text-4xl font-extrabold text-gray-900 font-mono uppercase">Storyboard Project</h1></div>
-                                <div className="flex-grow"><h2 className="text-xl font-bold uppercase tracking-wide text-gray-500 mb-4 font-mono">Input Scenario</h2><div className="whitespace-pre-wrap text-lg leading-loose text-gray-800 font-serif">{inputScenario}</div></div>
-                                <div className="mt-auto pt-8 text-sm text-gray-400 flex justify-between font-mono uppercase"><span>AI Storyboard Maker</span><span>Created with Gemini</span></div>
+                            {/* 표지 페이지 */}
+                            <div className="pdf-page">
+                                <div className="flex items-center gap-3 mb-8 pb-4 border-b-2 border-gray-900">
+                                    <Icon name="sparkles" size={32} />
+                                    <h1 className="text-4xl font-extrabold font-mono uppercase">Storyboard Project</h1>
+                                </div>
+                                <div className="flex-grow">
+                                    <h2 className="text-xl font-bold uppercase text-gray-500 mb-4 font-mono tracking-tight">Project Scenario</h2>
+                                    <div className="whitespace-pre-wrap text-lg leading-relaxed text-gray-800 font-serif border-l-4 border-gray-100 pl-6">{inputScenario}</div>
+                                </div>
+                                <div className="mt-auto pt-8 text-sm text-gray-400 flex justify-between font-mono uppercase border-t border-gray-100">
+                                    <span>AI Storyboard Maker</span>
+                                    <span>Created by Gemini 3.1 Flash</span>
+                                </div>
                             </div>
-                            <div className="pdf-page p-8 bg-white min-h-[297mm] flex flex-col relative page-break-after-always" style={{ pageBreakAfter: 'always' }}>
-                                <h2 className="text-xl font-bold mb-6 border-b pb-2 font-mono uppercase">All Scenes Overview</h2>
-                                <div className="flex flex-col gap-6">
-                                    {scenes.map((scene, index) => (
-                                        <div key={`pdf-list-${scene.id}`} className="flex gap-6 pb-6 border-b border-gray-100 last:border-0 last:pb-0 items-start" style={{ pageBreakInside: 'avoid' }}>
-                                            <div className="shrink-0 border border-gray-200 flex items-center justify-center overflow-hidden" style={{ width: '240px', minHeight: '180px', maxHeight: '320px' }}>{scene.imageUrl ? <img src={scene.imageUrl} className="max-w-full max-h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-xs text-gray-300 font-mono">No Image</div>}</div>
-                                            <div className="flex-1 flex flex-col gap-2"><div className="flex justify-between items-baseline"><h3 className="font-bold text-lg text-gray-900 font-mono">Scene {scene.id}</h3></div><p className="text-sm text-gray-700 leading-relaxed font-medium">{scene.description}</p><div className="mt-auto bg-gray-50 p-2 rounded border border-gray-100 font-mono"><p className="text-[8px] text-gray-500 font-mono leading-tight break-all text-justify uppercase">{scene.imagePrompt}</p></div></div>
+                            
+                            {/* 전체 요약 리스트 페이지 */}
+                            <div className="pdf-page">
+                                <h2 className="text-xl font-bold mb-6 border-b pb-2 font-mono uppercase tracking-widest">Scenes Overview</h2>
+                                <div className="flex flex-col gap-8">
+                                    {scenes.map(scene => (
+                                        <div key={`pdf-sum-${scene.id}`} className="flex gap-6 pb-6 border-b border-gray-50 page-break-inside-avoid last:border-0">
+                                            <div className="w-72 aspect-[4/3] shrink-0 border border-gray-100 bg-gray-50 overflow-hidden shadow-sm">
+                                                <img src={scene.imageUrl} className="w-full h-full object-cover" />
+                                            </div>
+                                            <div className="flex-1 flex flex-col">
+                                                <h3 className="font-bold text-xl font-mono mb-2 text-blue-600">SCENE #{scene.id.toString().padStart(2, '0')}</h3>
+                                                <p className="text-md text-gray-700 leading-relaxed font-medium">{scene.description}</p>
+                                                <div className="mt-auto bg-gray-50 p-2 text-[8px] text-gray-300 font-mono break-all uppercase border border-gray-100 leading-tight">PROMPT: {scene.imagePrompt}</div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            {scenes.map((scene) => (
-                                <div key={`pdf-full-${scene.id}`} className="pdf-page p-0 bg-white min-h-[297mm] flex flex-col justify-center items-center relative page-break-after-always" style={{ pageBreakAfter: 'always', pageBreakInside: 'avoid' }}>
-                                    <div className="w-full h-full p-8 flex flex-col justify-center items-center">{scene.imageUrl ? <img src={scene.imageUrl} className="max-w-full max-h-[250mm] object-contain shadow-sm border border-gray-100" /> : <div className="w-full h-96 flex items-center justify-center bg-gray-50 text-gray-300 font-mono">Image Not Available</div>}<div className="mt-4 text-center font-mono uppercase"><h3 className="font-bold text-xl text-gray-800 mb-1">Scene #{scene.id.toString().padStart(2, '0')}</h3><p className="text-sm text-gray-500">{scene.description.substring(0, 100)}...</p></div></div>
+
+                            {/* 개별 장면 대지 페이지 */}
+                            {scenes.map(scene => (
+                                <div key={`pdf-full-${scene.id}`} className="pdf-page flex items-center justify-center">
+                                    <div className="w-full">
+                                        <div className="mb-6 font-mono font-bold text-3xl text-gray-900 tracking-tighter border-b-2 border-gray-900 inline-block pb-1">SCENE #{scene.id}</div>
+                                        <div className="aspect-[4/3] w-full border border-gray-100 shadow-md mb-8 overflow-hidden bg-gray-50">
+                                            <img src={scene.imageUrl} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="bg-gray-50 p-8 rounded-lg border border-gray-100">
+                                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-2 font-mono">Description</h4>
+                                            <p className="text-2xl text-gray-800 font-serif leading-relaxed text-center italic">{scene.description}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
 
+                        {/* 이미지 확대 모달 */}
                         {selectedImage && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in" onClick={() => setSelectedImage(null)}>
-                                <div className="relative w-full max-w-5xl max-h-[90vh] flex items-center justify-center"><button onClick={() => setSelectedImage(null)} className="absolute -top-10 sm:-top-12 right-0 text-white hover:text-gray-300 transition-colors bg-white/10 p-1.5 sm:p-2 rounded-full hover:bg-white/20 shadow-xl"><Icon name="x" size={24} /></button><img src={selectedImage} alt="Enlarged view" className="max-w-full max-h-[85vh] sm:max-h-[90vh] object-contain rounded-lg shadow-2xl bg-white border border-white/20" onClick={(e) => e.stopPropagation()} /></div>
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 transition-all animate-in fade-in" onClick={() => setSelectedImage(null)}>
+                                <div className="relative max-w-5xl max-h-full">
+                                    <img src={selectedImage} className="max-w-full max-h-[90vh] rounded-lg shadow-2xl border-4 border-white/10" />
+                                    <button className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors bg-white/10 p-2 rounded-full"><Icon name="x" size={32}/></button>
+                                </div>
                             </div>
                         )}
                     </main>
