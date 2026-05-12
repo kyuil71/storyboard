@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Storyboard Maker</title>
-    <!-- CDN Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -148,7 +147,8 @@
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
             const analyzeScenario = async (text, count) => {
-                const styleInstruction = "consistent professional continuous line drawing, elegant black ink outlines, delicate translucent watercolor washes, minimalist architectural sketch aesthetic, uniform hand-drawn illustration on off-white paper texture, no borders, no frames, no margins, edge-to-edge composition";
+                // 수정된 스타일 지시어: 고해상도 시네마틱 실사 사진 스타일
+                const styleInstruction = "hyper-realistic, photorealistic commercial photography, cinematic lighting, 8k resolution, ultra-detailed, sharp focus, ambient warm lighting, highly detailed modern lifestyle aesthetic, masterpiece, shot on 35mm lens, depth of field, natural colors, no cartoon, no illustration";
                 const systemPrompt = `You are a professional storyboard artist. Analyze the scenario and split it into exactly ${count} chronological scenes.
                 1. Define "characterFeatures" with a highly specific physical description (age, hair style, facial hair status, facial shape, and specific clothing colors/items) to act as a visual signature that stays identical in every scene.
                 2. In each scene's "imagePrompt", start by strictly describing the protagonist using that exact visual signature to ensure consistency.
@@ -219,7 +219,8 @@
             };
 
             const regenerateScenePrompt = async (description, imageInstruction) => {
-                const styleInstruction = "consistent professional continuous line drawing, elegant black ink outlines, delicate translucent watercolor washes, minimalist architectural sketch aesthetic, uniform hand-drawn illustration on off-white paper texture, no borders, no frames, no margins, edge-to-edge composition";
+                // 수정된 스타일 지시어: 고해상도 시네마틱 실사 사진 스타일
+                const styleInstruction = "hyper-realistic, photorealistic commercial photography, cinematic lighting, 8k resolution, ultra-detailed, sharp focus, ambient warm lighting, highly detailed modern lifestyle aesthetic, masterpiece, shot on 35mm lens, depth of field, natural colors, no cartoon, no illustration";
                 const systemPrompt = `Professional storyboard artist. Maintain the exact same character features: ${characterFeatures}. New prompt for Scene: ${description}. Instruction: ${imageInstruction}. 
                 The prompt must start with character details and end with the visual style: "${styleInstruction}". English raw prompt string only.`;
                 
