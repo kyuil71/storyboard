@@ -150,8 +150,8 @@
                 // 수정된 스타일 지시어: 고해상도 시네마틱 실사 사진 스타일
                 const styleInstruction = "hyper-realistic, photorealistic commercial photography, cinematic lighting, 8k resolution, ultra-detailed, sharp focus, ambient warm lighting, highly detailed modern lifestyle aesthetic, masterpiece, shot on 35mm lens, depth of field, natural colors, no cartoon, no illustration";
                 const systemPrompt = `You are a professional storyboard artist. Analyze the scenario and split it into exactly ${count} chronological scenes.
-                1. Define "characterFeatures" with a highly specific physical description (age, hair style, facial hair status, facial shape, and specific clothing colors/items) to act as a visual signature that stays identical in every scene.
-                2. In each scene's "imagePrompt", start by strictly describing the protagonist using that exact visual signature to ensure consistency.
+                1. Define "characterFeatures" with an EXTREMELY specific physical description (age, exact hair style, strict facial hair status like 'clean-shaven with absolutely no beard or mustache', facial shape, and exact clothing). This is the permanent visual signature.
+                2. In each scene's "imagePrompt", you MUST start by copying the EXACT "characterFeatures" word-for-word. NEVER change the character's facial features, hair, or clothing across scenes (e.g., do not randomly add or remove beards). Character consistency is ABSOLUTELY CRITICAL.
                 3. Every "imagePrompt" must end with the mandatory style suffix: "${styleInstruction}".
                 4. The "description" for each scene MUST be written in Korean (한국어) and consist of exactly two sentences.
                 Return a valid JSON object with keys: "characterFeatures" and "scenes" (array of {id, description, imagePrompt}). Return ONLY raw JSON. Do NOT include markdown code blocks.`;
@@ -221,8 +221,8 @@
             const regenerateScenePrompt = async (description, imageInstruction) => {
                 // 수정된 스타일 지시어: 고해상도 시네마틱 실사 사진 스타일
                 const styleInstruction = "hyper-realistic, photorealistic commercial photography, cinematic lighting, 8k resolution, ultra-detailed, sharp focus, ambient warm lighting, highly detailed modern lifestyle aesthetic, masterpiece, shot on 35mm lens, depth of field, natural colors, no cartoon, no illustration";
-                const systemPrompt = `Professional storyboard artist. Maintain the exact same character features: ${characterFeatures}. New prompt for Scene: ${description}. Instruction: ${imageInstruction}. 
-                The prompt must start with character details and end with the visual style: "${styleInstruction}". English raw prompt string only.`;
+                const systemPrompt = `Professional storyboard artist. You MUST strictly maintain these EXACT character features: ${characterFeatures}. NEVER change facial features, hair, or clothing (e.g., do not randomly add/remove beards). New prompt for Scene: ${description}. Instruction: ${imageInstruction}. 
+                The prompt MUST start with the exact character details and end with the visual style: "${styleInstruction}". English raw prompt string only.`;
                 
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userApiKey}`, {
@@ -436,13 +436,6 @@
                         {viewMode === 'input' ? (
                             <div className="max-w-3xl mx-auto animate-fade-in">
                                 <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-8 border border-gray-100">
-                                    <div className="text-center mb-10">
-                                        <div className="flex items-center justify-center gap-2 mb-3">
-                                           <div className="bg-blue-600 p-1.5 rounded-lg shadow-sm"><Icon name="sparkles" className="text-white" size={20} /></div>
-                                           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">AI Storyboard Maker</h2>
-                                           <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-1 shadow-sm">Gemini Powered</span>
-                                        </div>
-                                    </div>
                                     <div className="mb-6">
                                         <label className="block text-sm font-bold text-slate-700 mb-2">시나리오 입력</label>
                                         <textarea value={inputScenario} onChange={(e) => setInputScenario(e.target.value)} className="w-full h-48 sm:h-64 p-3 sm:p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm leading-relaxed transition-all bg-slate-50 mb-6 outline-none text-gray-500 font-normal" />
