@@ -58,7 +58,8 @@ a{color:inherit}[hidden]{display:none!important}
 .hero-title{margin:0;color:var(--s900);font-size:clamp(42px,12vw,52px);font-weight:900;font-style:italic;line-height:1.08;letter-spacing:-.055em}
 .hero-subtitle{margin:22px 0 34px;color:var(--s500);font-size:17px;font-weight:600;line-height:1.75}
 .field-label{display:block;margin:0 2px 9px;color:var(--s500);font-size:16px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;text-align:left}
-.text-link{display:inline-block;margin:14px auto 26px;color:var(--blue);font-size:17px;font-weight:800;text-decoration:underline;text-underline-offset:4px}
+.text-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin:14px auto 26px;color:var(--blue);font-size:17px;font-weight:400;text-decoration:underline;text-underline-offset:4px}
+.text-link span{font-size:18px;text-decoration:none}
 
 /* ── 카드 · 본문 ── */
 .content{padding:20px 16px 176px;background:#fff}
@@ -170,37 +171,39 @@ a{color:inherit}[hidden]{display:none!important}
 }
 
 /* ══ PDF 페이지 (A4 가로 · 1123×794px @96dpi) ══
-   화면 밖에 두되 레이아웃은 정상 수행되어야 html2canvas 가 캡처할 수 있다. */
+   html2canvas 는 object-fit / aspect-ratio 를 지원하지 않는다.
+   따라서 모든 이미지 상자는 JS 가 원본 비율로 계산한 px 값을 직접 받는다. */
 #pdf-root{position:absolute;top:0;left:-5000px;width:1123px;background:#fff}
-.px-page{position:relative;display:flex;flex-direction:column;width:1123px;height:794px;padding:44px 54px 62px;background:#fff;color:#0f172a;overflow:hidden;
+.px-page{position:relative;width:1123px;height:794px;padding:44px 54px 62px;background:#fff;color:#0f172a;overflow:hidden;
   font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.px-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:12px;margin-bottom:24px;border-bottom:2px solid #0f172a}
+.px-head{display:flex;align-items:flex-end;justify-content:space-between;height:66px;padding-bottom:12px;margin-bottom:0;border-bottom:2px solid #0f172a}
 .px-head h2{margin:0;font-size:24px;font-weight:900;letter-spacing:-.03em}
 .px-kicker{font-size:14px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#2563eb}
+.px-body{padding-top:24px}
 .px-foot{position:absolute;left:54px;right:54px;bottom:22px;display:flex;justify-content:space-between;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8}
 .px-cover-title{margin:0 0 6px;font-size:62px;font-weight:900;font-style:italic;line-height:1.04;letter-spacing:-.055em}
-.px-cover-sub{margin:0 0 28px;font-size:17px;font-weight:700;color:#5b6b80;letter-spacing:.02em}
-.px-scenario{margin:0;padding-left:20px;border-left:4px solid #e2e8f0;font-size:16px;line-height:1.85;white-space:pre-wrap;word-break:break-word;flex:1;overflow:hidden}
-.px-contact{display:grid;gap:16px;flex:1;align-content:start;overflow:hidden}
-.px-cell{border:1px solid #e2e8f0;overflow:hidden;background:#f8fafc}
-.px-cell .px-thumb{aspect-ratio:4/3;display:grid;place-items:center;overflow:hidden;background:#f1f5f9;color:#94a3b8;font-size:13px}
-.px-cell .px-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.px-cell .px-cap{display:flex;gap:8px;align-items:baseline;padding:8px 10px;background:#fff;border-top:1px solid #e2e8f0}
-.px-cell .px-cap b{font-size:13px;font-weight:900;color:#2563eb;letter-spacing:.04em;flex:0 0 auto}
-.px-cell .px-cap span{font-size:13px;line-height:1.45;color:#475569;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.px-rows{display:flex;flex-direction:column;gap:18px;flex:1;overflow:hidden}
-.px-row{display:flex;gap:20px;padding-bottom:16px;border-bottom:1px solid #f1f5f9}
-.px-row .px-thumb{width:212px;flex:0 0 212px;aspect-ratio:4/3;display:grid;place-items:center;overflow:hidden;border:1px solid #e2e8f0;background:#f8fafc;color:#94a3b8;font-size:13px}
-.px-row .px-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.px-cover-sub{margin:0 0 26px;font-size:17px;font-weight:700;color:#5b6b80;letter-spacing:.02em}
+.px-scenario{margin:0;padding-left:20px;border-left:4px solid #e2e8f0;font-size:16px;line-height:1.85;white-space:pre-wrap;word-break:break-word;overflow:hidden}
+
+/* 이미지 상자 — 크기는 인라인 스타일로만 지정된다 */
+.px-box{display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f8fafc;color:#94a3b8;font-size:13px;text-align:center}
+.px-box img{display:block}
+
+.px-contact{font-size:0}
+.px-cell{display:inline-block;vertical-align:top;border:1px solid #e2e8f0;background:#fff;overflow:hidden}
+.px-cap{display:flex;gap:8px;align-items:baseline;padding:8px 10px;border-top:1px solid #e2e8f0;overflow:hidden}
+.px-cap b{font-size:13px;font-weight:900;color:#2563eb;letter-spacing:.04em;flex:0 0 auto}
+.px-cap span{font-size:13px;line-height:1.45;color:#475569;overflow:hidden}
+
+.px-row{display:flex;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #f1f5f9}
 .px-row h3{margin:0 0 7px;font-size:17px;font-weight:900;color:#2563eb;letter-spacing:.04em}
 .px-row p{margin:0;font-size:15px;line-height:1.7;color:#334155;word-break:break-word}
-.px-solo{display:flex;gap:34px;flex:1;align-items:stretch;overflow:hidden}
-.px-hero{flex:1 1 auto;display:grid;place-items:center;overflow:hidden;border:1px solid #e2e8f0;background:#f8fafc;color:#94a3b8;font-size:15px}
-.px-hero img{width:100%;height:100%;object-fit:contain;display:block;background:#0f172a}
-.px-side{width:330px;flex:0 0 330px;display:flex;flex-direction:column}
+
+.px-solo{display:flex}
+.px-side{display:flex;flex-direction:column}
 .px-side h3{margin:0 0 14px;font-size:34px;font-weight:900;letter-spacing:-.04em}
 .px-side p{margin:0;font-size:17px;line-height:1.8;color:#334155;word-break:break-word}
-.px-prompt{margin-top:auto;padding-top:14px;border-top:1px solid #e2e8f0;font-size:10px;line-height:1.55;color:#94a3b8;word-break:break-all;font-family:ui-monospace,Menlo,monospace;max-height:118px;overflow:hidden}
+.px-prompt{margin-top:auto;padding-top:14px;border-top:1px solid #e2e8f0;font-size:10px;line-height:1.55;color:#94a3b8;word-break:break-all;font-family:ui-monospace,Menlo,monospace}
 </style>
 </head>
 <body>
@@ -272,6 +275,8 @@ const state = {
   banner: null,
   abort: null,
   wakeLock: null,
+  savedAt: null,
+  autoSaveError: null,
 };
 
 const $  = (sel, root = document) => root.querySelector(sel);
@@ -639,6 +644,7 @@ async function drawScenes(indices, signal) {
       streak++;
     }
     patchScene(i);
+    scheduleAutoSave(1200);
   }
 }
 
@@ -652,6 +658,7 @@ function finishRun() {
       : { type: 'warn', title: '일부 컷을 만들지 못했습니다', text: ok + '개 성공 · ' + failed + '개 실패. 실패한 컷의 오류 메시지를 확인하고 개별로 다시 그릴 수 있습니다.' };
   }
   render();
+  autoSaveNow();
 }
 
 async function retryFailed() {
@@ -723,6 +730,136 @@ function setProgress(current, total, message) { state.progress = { current, tota
 function setProgressMessage(message) { state.progress.message = message; patchProgress(); }
 
 // ══════════════════════════════════════════════════════════════════
+// 자동 저장 — 이미지는 base64 라 용량이 커서 IndexedDB 에 넣는다.
+// (localStorage 는 5MB 안팎이라 컷 몇 장이면 바로 넘친다)
+// ══════════════════════════════════════════════════════════════════
+const IDB_NAME = 'ai-storyboard-maker';
+const IDB_STORE = 'session';
+const IDB_KEY = 'current';
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('IndexedDB 미지원')); return; }
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error('IndexedDB 열기 실패'));
+  });
+}
+
+async function idbPut(value) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, IDB_KEY);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+async function idbGet() {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const rq = tx.objectStore(IDB_STORE).get(IDB_KEY);
+    rq.onsuccess = () => { db.close(); resolve(rq.result || null); };
+    rq.onerror = () => { db.close(); reject(rq.error); };
+  });
+}
+async function idbClear() {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(IDB_KEY);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+function sessionSnapshot() {
+  return {
+    format: 'ai-storyboard-maker', version: 2, savedAt: new Date().toISOString(),
+    scenario: state.scenario, sceneCount: state.sceneCount, styleId: state.styleId,
+    characterFeatures: state.characterFeatures,
+    scenes: state.scenes.map(s => ({
+      id: s.id, description: s.description, imagePrompt: s.imagePrompt,
+      imageInstruction: s.imageInstruction, imageUrl: s.imageUrl, status: s.status,
+    })),
+  };
+}
+
+let autoSaveTimer = null;
+let autoSaveRunning = false;
+
+function scheduleAutoSave(delay = 700) {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(autoSaveNow, delay);
+}
+
+async function autoSaveNow() {
+  clearTimeout(autoSaveTimer);
+  if (autoSaveRunning) { scheduleAutoSave(400); return; }
+  autoSaveRunning = true;
+  try {
+    await idbPut(sessionSnapshot());
+    state.savedAt = new Date();
+    state.autoSaveError = null;
+  } catch (err) {
+    state.autoSaveError = err?.message || '자동 저장에 실패했습니다.';
+  } finally {
+    autoSaveRunning = false;
+    paintSaveStatus();
+  }
+}
+
+async function clearSession() {
+  clearTimeout(autoSaveTimer);
+  state.savedAt = null;
+  try { await idbClear(); } catch (_) { /* noop */ }
+}
+
+function saveStatusText() {
+  if (state.autoSaveError) return '자동 저장 실패 · ' + state.autoSaveError;
+  if (!state.savedAt) return '';
+  const t = state.savedAt;
+  const hh = String(t.getHours()).padStart(2, '0');
+  const mm = String(t.getMinutes()).padStart(2, '0');
+  return '자동 저장됨 · ' + hh + ':' + mm;
+}
+function paintSaveStatus() {
+  const el = $('#saveStatus');
+  if (el) el.textContent = saveStatusText();
+}
+
+async function restoreSession() {
+  let data = null;
+  try { data = await idbGet(); } catch (_) { return; }
+  if (!data || !Array.isArray(data.scenes) || !data.scenes.length) return;
+
+  state.scenario = String(data.scenario || state.scenario);
+  if (Number.isInteger(data.sceneCount)) state.sceneCount = data.sceneCount;
+  if (data.styleId && STYLES[data.styleId]) state.styleId = data.styleId;
+  state.characterFeatures = String(data.characterFeatures || '');
+  state.scenes = data.scenes.filter(x => x && typeof x === 'object').map((x, i) => ({
+    id: i + 1,
+    description: String(x.description || ''),
+    imagePrompt: String(x.imagePrompt || ''),
+    imageInstruction: String(x.imageInstruction || ''),
+    imageUrl: typeof x.imageUrl === 'string' && x.imageUrl.startsWith('data:image/') ? x.imageUrl : null,
+    status: x.status === 'done' && x.imageUrl ? 'done' : (x.imageUrl ? 'done' : 'failed'),
+    error: x.imageUrl ? null : '저장된 이미지가 없습니다. 다시 그려 주세요.',
+  }));
+  state.phase = 'done';
+  state.savedAt = data.savedAt ? new Date(data.savedAt) : null;
+  state.banner = {
+    type: 'info', title: '이전 작업을 이어서 볼 수 있습니다',
+    text: state.scenes.length + '개 컷을 자동 저장에서 복원했습니다. API 키를 넣고 시작하면 바로 이어집니다.',
+  };
+  render();
+}
+
+// ══════════════════════════════════════════════════════════════════
 // 임시 저장 / 작업 파일
 // ══════════════════════════════════════════════════════════════════
 function saveDraft() {
@@ -731,6 +868,7 @@ function saveDraft() {
       scenario: state.scenario, sceneCount: state.sceneCount, styleId: state.styleId,
     }));
   } catch (_) { /* noop */ }
+  scheduleAutoSave();
 }
 function loadDraft() {
   try {
@@ -780,6 +918,7 @@ async function openProjectFile(file) {
     state.banner = { type: 'info', title: '작업을 불러왔습니다', text: state.scenes.length + '개 컷을 복원했습니다.' };
     state.screen = state.apiKey ? 'board' : 'intro';
     render();
+    autoSaveNow();
   } catch (err) {
     state.banner = { type: 'error', title: '작업 파일을 열지 못했습니다', text: err.message || '파일 형식을 확인해 주세요.' };
     render();
@@ -914,7 +1053,16 @@ function openEditSheet(index) {
 
 // ══════════════════════════════════════════════════════════════════
 // PDF — A4 가로, 파일 직접 생성 (인쇄 대화상자 없음)
+//
+// html2canvas 는 object-fit / aspect-ratio 를 무시하고 <img> 를 상자 크기로
+// 늘려 버린다. 그래서 이미지의 실제 픽셀 크기를 먼저 재고, 원본 비율을 유지한
+// px 값을 인라인 스타일로 직접 지정한다.
 // ══════════════════════════════════════════════════════════════════
+const PAGE_W = 1123, PAGE_H = 794;
+const PAD_X = 54, PAD_T = 44, PAD_B = 62, HEAD_H = 66, BODY_TOP = 24;
+const AREA_W = PAGE_W - PAD_X * 2;                       // 1015
+const AREA_H = PAGE_H - PAD_T - PAD_B - HEAD_H - BODY_TOP; // 598
+
 function chunkText(text, perPage = 1500) {
   const src = String(text || '');
   if (src.length <= perPage) return [src];
@@ -931,19 +1079,59 @@ function chunkText(text, perPage = 1500) {
   return out;
 }
 
-function pxThumb(scene, cls) {
-  return '<div class="' + cls + '">' +
-    (scene.imageUrl ? '<img src="' + esc(scene.imageUrl) + '" alt="">' : '<span>이미지 없음</span>') +
+function clip(text, max) {
+  const t = String(text || '');
+  return t.length > max ? t.slice(0, max).trim() + '…' : t;
+}
+
+// 이미지 원본 픽셀 크기를 잰다. 실패하면 4:3 으로 가정한다.
+function measureImage(dataUrl) {
+  return new Promise(resolve => {
+    if (!dataUrl) { resolve(null); return; }
+    let settled = false;
+    const done = v => { if (!settled) { settled = true; clearTimeout(timer); resolve(v); } };
+    // load 도 error 도 오지 않는 경우가 있으므로 상한을 둔다.
+    const timer = setTimeout(() => done({ w: 4, h: 3 }), 5000);
+    const im = new Image();
+    im.onload = () => done({ w: im.naturalWidth || 4, h: im.naturalHeight || 3 });
+    im.onerror = () => done({ w: 4, h: 3 });
+    im.src = dataUrl;
+  });
+}
+
+// 원본 비율을 유지한 채 상자 안에 들어가는 최대 크기 (letterbox)
+function fitInside(nat, boxW, boxH) {
+  const ratio = (nat && nat.h) ? nat.w / nat.h : 4 / 3;
+  let w = boxW;
+  let h = w / ratio;
+  if (h > boxH) { h = boxH; w = h * ratio; }
+  return { w: Math.max(1, Math.round(w)), h: Math.max(1, Math.round(h)) };
+}
+
+// 이미지 상자 하나. 상자 크기와 이미지 크기를 모두 px 로 못 박는다.
+function pxBox(scene, nat, boxW, boxH, extraStyle) {
+  const style = 'width:' + boxW + 'px;height:' + boxH + 'px;' + (extraStyle || '');
+  if (!scene.imageUrl) {
+    return '<div class="px-box" style="' + style + '"><span>이미지 없음</span></div>';
+  }
+  const f = fitInside(nat, boxW, boxH);
+  return '<div class="px-box" style="' + style + '">' +
+    '<img src="' + esc(scene.imageUrl) + '" alt="" style="width:' + f.w + 'px;height:' + f.h + 'px">' +
     '</div>';
 }
+
 function pxFoot(page) {
   return '<div class="px-foot"><span>AI Storyboard Maker</span><span>' + esc(page) + '</span></div>';
 }
+function pxHead(title, kicker) {
+  return '<div class="px-head"><h2>' + esc(title) + '</h2><span class="px-kicker">' + esc(kicker) + '</span></div>';
+}
 
 // A4 가로 페이지 DOM 을 만들고 요소 배열을 돌려준다.
-function buildPdfPages() {
+async function buildPdfPages() {
   const root = $('#pdf-root');
   const scenes = state.scenes;
+  const sizes = await Promise.all(scenes.map(s => measureImage(s.imageUrl)));
   const pages = [];
 
   // 1) 표지 — 시나리오가 길면 자동 분할
@@ -951,57 +1139,78 @@ function buildPdfPages() {
     pages.push(
       '<section class="px-page">' +
         (i === 0
-          ? '<h1 class="px-cover-title">Storyboard<br>Maker</h1>' +
-            '<p class="px-cover-sub">' + esc(styleOf().label) + ' · ' + scenes.length + '컷 · ' + esc(stamp()) + '</p>'
-          : '<div class="px-head"><h2>Project Scenario</h2><span class="px-kicker">Continued</span></div>') +
-        '<p class="px-scenario">' + esc(chunk) + '</p>' +
+          ? '<div style="height:' + (HEAD_H + BODY_TOP) + 'px">' +
+              '<h1 class="px-cover-title">Storyboard<br>Maker</h1></div>' +
+            '<p class="px-cover-sub">' + esc(styleOf().label) + ' · ' + scenes.length + '컷 · ' + esc(stamp()) + '</p>' +
+            '<p class="px-scenario" style="max-height:' + (AREA_H - 60) + 'px">' + esc(chunk) + '</p>'
+          : pxHead('Project Scenario', 'Continued') +
+            '<div class="px-body"><p class="px-scenario" style="max-height:' + AREA_H + 'px">' + esc(chunk) + '</p></div>') +
         pxFoot('Cover') +
       '</section>');
   });
 
-  // 2) 컨택트 시트 — 모든 컷을 한 장에
+  // 2) 컨택트 시트 — 모든 컷을 한 장에 (원본 비율 유지)
   if (scenes.length) {
     const cols = scenes.length <= 2 ? 2 : scenes.length <= 6 ? 3 : 4;
-    const cells = scenes.map(s =>
-      '<div class="px-cell">' + pxThumb(s, 'px-thumb') +
-        '<div class="px-cap"><b>#' + String(s.id).padStart(2, '0') + '</b><span>' + esc(s.description) + '</span></div>' +
-      '</div>').join('');
+    const rows = Math.ceil(scenes.length / cols);
+    const GAP = 16, CAP_H = 44, BORDER = 2;
+    const cellW = Math.floor((AREA_W - GAP * (cols - 1)) / cols);
+    const cellH = Math.floor((AREA_H - GAP * (rows - 1)) / rows);
+    const boxW = cellW - BORDER;
+    const boxH = Math.max(40, cellH - CAP_H - BORDER);
+
+    const cells = scenes.map((s, i) => {
+      const lastCol = (i % cols) === cols - 1;
+      const lastRow = Math.floor(i / cols) === rows - 1;
+      const margin = 'margin-right:' + (lastCol ? 0 : GAP) + 'px;margin-bottom:' + (lastRow ? 0 : GAP) + 'px';
+      return '<div class="px-cell" style="width:' + cellW + 'px;' + margin + '">' +
+        pxBox(s, sizes[i], boxW, boxH, 'border-bottom:1px solid #e2e8f0') +
+        '<div class="px-cap" style="height:' + CAP_H + 'px">' +
+          '<b>#' + String(s.id).padStart(2, '0') + '</b>' +
+          '<span>' + esc(clip(s.description, 52)) + '</span>' +
+        '</div></div>';
+    }).join('');
+
     pages.push(
       '<section class="px-page">' +
-        '<div class="px-head"><h2>Storyboard · 전체 컷</h2><span class="px-kicker">Contact Sheet</span></div>' +
-        '<div class="px-contact" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">' + cells + '</div>' +
+        pxHead('Storyboard · 전체 컷', 'Contact Sheet') +
+        '<div class="px-body px-contact">' + cells + '</div>' +
         pxFoot('Contact Sheet') +
       '</section>');
   }
 
   // 3) 개요 — 가로 A4 한 장에 3행
+  const THUMB_W = 236, THUMB_H = 150, ROW_GAP = 22;
   for (let i = 0; i < scenes.length; i += 3) {
-    const rows = scenes.slice(i, i + 3).map(s =>
-      '<div class="px-row">' + pxThumb(s, 'px-thumb') +
+    const slice = scenes.slice(i, i + 3);
+    const rows = slice.map((s, k) =>
+      '<div class="px-row" style="' + (k === slice.length - 1 ? 'border-bottom:0;margin-bottom:0;padding-bottom:0' : '') + '">' +
+        pxBox(s, sizes[i + k], THUMB_W, THUMB_H, 'border:1px solid #e2e8f0;margin-right:' + ROW_GAP + 'px;flex:0 0 auto') +
         '<div style="flex:1;min-width:0">' +
           '<h3>SCENE #' + String(s.id).padStart(2, '0') + '</h3>' +
           '<p>' + esc(s.description) + '</p>' +
         '</div></div>').join('');
     pages.push(
       '<section class="px-page">' +
-        '<div class="px-head"><h2>Scenes Overview</h2><span class="px-kicker">' +
-          (i + 1) + '–' + Math.min(i + 3, scenes.length) + ' / ' + scenes.length + '</span></div>' +
-        '<div class="px-rows">' + rows + '</div>' +
+        pxHead('Scenes Overview', (i + 1) + '–' + Math.min(i + 3, scenes.length) + ' / ' + scenes.length) +
+        '<div class="px-body">' + rows + '</div>' +
         pxFoot('Overview') +
       '</section>');
   }
 
-  // 4) 컷별 상세
-  scenes.forEach(s => {
+  // 4) 컷별 상세 — 왼쪽 대형 이미지(원본 비율), 오른쪽 설명
+  const SIDE_W = 330, SOLO_GAP = 34;
+  const HERO_W = AREA_W - SIDE_W - SOLO_GAP;
+  scenes.forEach((s, i) => {
     pages.push(
       '<section class="px-page">' +
-        '<div class="px-head"><h2>SCENE #' + String(s.id).padStart(2, '0') + '</h2><span class="px-kicker">' + esc(styleOf().label) + '</span></div>' +
-        '<div class="px-solo">' +
-          pxThumb(s, 'px-hero') +
-          '<div class="px-side">' +
+        pxHead('SCENE #' + String(s.id).padStart(2, '0'), styleOf().label) +
+        '<div class="px-body px-solo">' +
+          pxBox(s, sizes[i], HERO_W, AREA_H, 'border:1px solid #e2e8f0;margin-right:' + SOLO_GAP + 'px;flex:0 0 auto') +
+          '<div class="px-side" style="width:' + SIDE_W + 'px;flex:0 0 ' + SIDE_W + 'px;height:' + AREA_H + 'px">' +
             '<h3>#' + String(s.id).padStart(2, '0') + '</h3>' +
             '<p>' + esc(s.description) + '</p>' +
-            '<div class="px-prompt">' + esc(fullPrompt(s)) + '</div>' +
+            '<div class="px-prompt">' + esc(clip(fullPrompt(s), 430)) + '</div>' +
           '</div>' +
         '</div>' +
         pxFoot('Scene ' + s.id) +
@@ -1042,7 +1251,7 @@ async function exportPdf() {
 
   try {
     await ensurePdfLibs();
-    const pages = buildPdfPages();
+    const pages = await buildPdfPages();
     step(0, pages.length, '페이지를 그리는 중…');
     await new Promise(r => setTimeout(r, 150));
 
@@ -1052,7 +1261,7 @@ async function exportPdf() {
     for (let i = 0; i < pages.length; i++) {
       const canvas = await window.html2canvas(pages[i], {
         scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
-        width: 1123, height: 794, windowWidth: 1123, windowHeight: 794,
+        width: PAGE_W, height: PAGE_H, windowWidth: PAGE_W, windowHeight: PAGE_H,
       });
       const img = canvas.toDataURL('image/jpeg', 0.92);
       if (i > 0) pdf.addPage('a4', 'landscape');
@@ -1119,7 +1328,7 @@ function renderIntro() {
       '<label class="field-label" for="apiKeyInput">API 키를 입력해 주세요</label>' +
       '<input id="apiKeyInput" class="text-input" type="password" inputmode="text" autocomplete="off" spellcheck="false" ' +
         'placeholder="AIzaSy…" value="' + esc(state.apiKey) + '" style="text-align:center;font-family:ui-monospace,Menlo,monospace">' +
-      '<a class="text-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">새 API 키 발급받기</a>' +
+      '<a class="text-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">새 API 키 발급받기 <span aria-hidden="true">🔑</span></a>' +
       '<button class="btn btn-primary btn-full" data-act="start">시작하기 <i data-lucide="arrow-right"></i></button>' +
       '<button class="btn btn-outline btn-full" data-act="open-project" style="margin-top:10px"><i data-lucide="folder-open"></i> 저장한 작업 열기</button>' +
       '<input id="projectInput" type="file" accept="application/json,.json" hidden>' +
@@ -1264,7 +1473,8 @@ function renderBoard() {
   const content =
     bannerHTML() + progressBlock +
     (scenes.length ? '<div class="board-grid">' + scenes.map((s, i) => sceneCardHTML(s, i)).join('') + '</div>' : '') +
-    '<p class="foot-note">생성된 이미지는 AI 합성 결과이며 실제 제품 · 인물과 무관합니다.</p>';
+    '<p class="foot-note"><span id="saveStatus">' + esc(saveStatusText()) + '</span><br>' +
+      '생성된 이미지는 AI 합성 결과이며 실제 제품 · 인물과 무관합니다.</p>';
 
   const bottom =
     (bad > 0 && !state.busy
@@ -1341,6 +1551,7 @@ app.addEventListener('click', async e => {
     case 'reset': {
       const yes = await askConfirm('새로 만들기', '지금까지 생성한 컷이 모두 사라집니다. 계속할까요?', '모두 지우기', true);
       if (!yes) break;
+      await clearSession();
       state.scenes = []; state.characterFeatures = ''; state.phase = 'idle';
       state.banner = null; state.progress = { current: 0, total: 0, message: '' };
       state.screen = 'input';
@@ -1367,6 +1578,7 @@ window.addEventListener('beforeunload', e => {
 
 loadDraft();
 render();
+restoreSession();
 
 })();
 </script>
