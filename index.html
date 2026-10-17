@@ -38,21 +38,30 @@ a{color:inherit}[hidden]{display:none!important}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.spinner{animation:spin 1s linear infinite!important}}
 
 /* ── 헤더 (레퍼런스 포맷) ── */
-.app-header{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:98px 1fr 98px;align-items:center;min-height:86px;padding:max(12px,env(safe-area-inset-top)) 14px 10px;color:#fff;background:#0f172afa;backdrop-filter:blur(16px)}
-.header-nav{display:flex;gap:4px}
-.header-tail{display:flex;gap:4px;justify-content:flex-end}
+/* 상단 메뉴 — 다른 분석 도구와 같은 흰색 컴팩트 헤더 (아이콘 행 + 진행 바) */
+.app-header{position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top);border-bottom:1px solid var(--s200);background:#fffffff2;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .28s var(--ease)}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;gap:4px;height:56px;padding:0 12px}
+.hdr-left{display:flex;align-items:center;gap:4px;flex:1;min-width:0;overflow:hidden}
+.hdr-left h1{margin:0 0 0 4px;overflow:hidden;color:var(--s900);font-size:19px;font-weight:700;line-height:1.5;text-overflow:ellipsis;white-space:nowrap}
+.hdr-right{display:flex;align-items:center;gap:2px;flex:0 0 auto;color:var(--s600)}
+.hdr-btn{display:grid;place-items:center;width:44px;height:44px;padding:0;border-radius:50%;color:var(--s600);transition:background .15s}
+.hdr-btn:hover:not(:disabled){background:var(--s100)}
+.hdr-btn:active:not(:disabled){background:var(--s200)}
+.hdr-btn.strong{color:var(--s900)}
+.hdr-btn svg{width:24px;height:24px}
+.header-tail{display:contents}
+.hdr-progress{display:flex;align-items:center;gap:12px;padding:0 16px 8px}
+.hdr-progress .track{flex:1;height:6px;overflow:hidden;border-radius:999px;background:var(--s200)}
+.hdr-progress .track i{display:block;height:100%;border-radius:inherit;background:var(--blue);transition:width .35s var(--ease)}
+.hdr-progress span{flex:0 0 auto;color:var(--s500);font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.65}
 .icon-button{display:grid;place-items:center;width:46px;height:46px;padding:0;border-radius:var(--r-md);color:var(--s500)}
-.header-button{color:#fff;background:#ffffff1a}
-.header-button:disabled{opacity:.3}
 .icon-button svg{width:23px;height:23px}
-.header-title{min-width:0;text-align:center}
-.header-title strong{display:block;overflow:hidden;font-size:19px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-.header-title small{display:block;margin-bottom:2px;color:#9dc7fd;font-size:16px;font-weight:800;letter-spacing:.02em}
-.step-area{padding:22px 16px 0;background:#fff}
-.step-meta{display:flex;justify-content:space-between;color:var(--blue);font-size:16px;font-weight:850;letter-spacing:.04em}
-.step-area h1{margin:9px 0 18px;font-size:31px;font-weight:900;line-height:1.18;letter-spacing:-.035em}
-.progress-track{height:5px;overflow:hidden;border-radius:999px;background:var(--s100)}
-.progress-track i{display:block;height:100%;border-radius:inherit;background:var(--blue);transition:width .35s var(--ease)}
+
+/* 유동형 크롬 — 아래로 스크롤하거나 키보드가 열리면 상단 · 하단 메뉴가 비켜선다 */
+body.chrome-hide .app-header{transform:translateY(-100%)}
+body.chrome-hide .bottom-bar{transform:translate(-50%,110%)}
+/* 키보드가 열리면 자리까지 비워 입력창이 화면을 넓게 쓴다 */
+body.kb-open .app-header,body.kb-open .bottom-bar{display:none}
 
 /* ── 인트로 ── */
 .api-screen{display:flex;flex-direction:column;justify-content:center;padding:46px 32px calc(42px + env(safe-area-inset-bottom));text-align:center;background:#fff}
@@ -87,7 +96,7 @@ a{color:inherit}[hidden]{display:none!important}
 .btn-outline:hover:not(:disabled){border-color:var(--s300);background:var(--s50)}
 .btn-danger{color:var(--danger);background:var(--danger-bg);border:2px solid #ffd5d2}
 .btn-small{min-height:50px;padding:11px 15px;border-radius:var(--r-sm);font-size:17px}
-.bottom-bar{position:fixed;z-index:30;bottom:0;left:50%;width:min(100%,var(--frame));padding:14px 16px calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);border-top:1px solid var(--s100);background:#fffffff2;backdrop-filter:blur(16px)}
+.bottom-bar{position:fixed;z-index:30;bottom:0;left:50%;width:min(100%,var(--frame));padding:14px 16px calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);transition:transform .28s var(--ease),visibility .28s;border-top:1px solid var(--s100);background:#fffffff2;backdrop-filter:blur(16px)}
 .bottom-stack{display:grid;gap:9px}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 
@@ -168,7 +177,7 @@ a{color:inherit}[hidden]{display:none!important}
 .foot-note button{color:var(--blue);font-weight:800;text-decoration:underline;text-underline-offset:3px}
 
 @media(max-width:380px){
-  .content,.step-area,.bottom-bar{padding-left:13px;padding-right:13px}
+  .content,.bottom-bar{padding-left:13px;padding-right:13px}
   .card{padding:18px 15px}.hero-title{font-size:40px}
   .count-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
@@ -1299,23 +1308,29 @@ function bannerHTML() {
     (b.title ? '<b>' + esc(b.title) + '</b>' : '') + esc(b.text) + '</div>';
 }
 
-// 레퍼런스 상단 포맷: 다크 헤더(좌우 꺽쇠 + 타이틀) + 흰 스텝 영역(스텝 · 제목 · 진행 바)
+// 상단 메뉴 — 다른 분석 도구와 같은 형식: [이전] 제목 · [다음][저장][전체 화면][처음] + 진행 바
 function shell(stepNo, stepTitle, progressPct, contentHTML, bottomHTML) {
   const canPrev = state.screen !== 'input';
   const canNext = state.screen !== 'board' && state.scenes.length > 0;
+  const cuts = state.scenes.length ? ' · ' + state.scenes.length + '컷' : '';
   return '<header class="app-header">' +
-      '<div class="header-nav">' +
-        '<button class="icon-button header-button" data-act="go-input" ' + (canPrev ? '' : 'disabled') + ' aria-label="시나리오 입력으로 이동"><i data-lucide="chevron-left"></i></button>' +
-        '<button class="icon-button header-button" data-act="go-board" ' + (canNext ? '' : 'disabled') + ' aria-label="스토리보드로 이동"><i data-lucide="chevron-right"></i></button>' +
+      '<div class="hdr-row">' +
+        '<div class="hdr-left">' +
+          (canPrev ? '<button class="hdr-btn" data-act="go-input" aria-label="이전 단계로"><i data-lucide="chevron-left"></i></button>' : '') +
+          '<h1>' + esc(stepTitle) + '</h1>' +
+        '</div>' +
+        '<div class="hdr-right">' +
+          (canNext ? '<button class="hdr-btn strong" data-act="go-board" aria-label="다음 단계로"><i data-lucide="chevron-right"></i></button>' : '') +
+          '<button class="hdr-btn" data-act="save-now" aria-label="진행 상태 저장"><i data-lucide="save"></i></button>' +
+          '<span class="header-tail"></span>' +
+          '<button class="hdr-btn" data-act="go-home" aria-label="처음 화면으로"><i data-lucide="home"></i></button>' +
+        '</div>' +
       '</div>' +
-      '<div class="header-title"><small>AI</small><strong>Storyboard Maker</strong></div>' +
-      '<div class="header-tail"></div>' +
+      '<div class="hdr-progress">' +
+        '<div class="track"><i style="width:' + progressPct + '%"></i></div>' +
+        '<span>' + stepNo + ' / 2 · ' + esc(stepTitle === '스토리보드 만드는 중' ? '스토리보드' : stepTitle) + cuts + '</span>' +
+      '</div>' +
     '</header>' +
-    '<div class="step-area">' +
-      '<div class="step-meta"><span>STEP ' + stepNo + ' / 2</span><span>' + (state.scenes.length ? state.scenes.length + '컷' : '') + '</span></div>' +
-      '<h1>' + esc(stepTitle) + '</h1>' +
-      '<div class="progress-track"><i style="width:' + progressPct + '%"></i></div>' +
-    '</div>' +
     '<div class="content fade-in">' + contentHTML + '</div>' +
     (bottomHTML ? '<div class="bottom-bar"><div class="bottom-stack">' + bottomHTML + '</div></div>' : '');
 }
@@ -1499,6 +1514,7 @@ function render() {
   else renderBoard();
   icons();
   paintFullscreenButton();
+  if (chromeReady) chromeCtl.reset();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1524,6 +1540,10 @@ app.addEventListener('click', async e => {
 
   switch (btn.dataset.act) {
     case 'start': enterApp(); break;
+    case 'save-now': saveDraft(); await autoSaveNow(); toast(state.autoSaveError ? '저장하지 못했습니다.' : '진행 상태를 저장했습니다.'); break;
+    case 'go-home':
+      if (state.busy) { toast('작업이 끝난 뒤에 이동해 주세요.'); break; }
+      state.screen = 'intro'; state.banner = null; render(); break;
     case 'go-input': state.screen = 'input'; render(); break;
     case 'go-board': if (state.scenes.length) { state.screen = 'board'; render(); } break;
 
@@ -1610,7 +1630,7 @@ function paintFullscreenButton() {
   if (!tail) return;
   if (!fsEnabled) { tail.innerHTML = ''; return; }
   const on = isFullscreen();
-  tail.innerHTML = '<button class="icon-button header-button" data-act="fullscreen" aria-label="' +
+  tail.innerHTML = '<button class="hdr-btn" data-act="fullscreen" aria-label="' +
     (on ? '전체 화면 끝내기' : '전체 화면') + '"><i data-lucide="' + (on ? 'minimize' : 'maximize') + '"></i></button>';
   icons();
 }
@@ -1627,6 +1647,74 @@ document.addEventListener('webkitfullscreenchange', paintFullscreenButton);
 app.addEventListener('click', e => {
   if (e.target.closest('[data-act="fullscreen"]')) toggleFullscreen();
 });
+// ══════════════════════════════════════════════════════════════════
+// 유동형 상단 · 하단 메뉴
+// - 스마트폰에서 입력창에 키보드가 열리면 두 메뉴를 숨겨 입력 공간을 넓힌다.
+// - 아래로 스크롤하면 숨고, 위로 스크롤하거나 맨 위 · 맨 아래에 닿으면 다시 나타난다.
+// ══════════════════════════════════════════════════════════════════
+let chromeReady = false;
+const chromeCtl = (() => {
+  const body = document.body;
+  const editable = el => !!el && (el.tagName === 'TEXTAREA' ||
+    (el.tagName === 'INPUT' && !/^(button|checkbox|radio|file|range|submit|reset|color|hidden)$/i.test(el.type)) ||
+    el.isContentEditable);
+  let lastY = window.scrollY, ticking = false, blurTimer = null;
+
+  function setHidden(hide) { body.classList.toggle('chrome-hide', hide); }
+
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const y = Math.max(0, window.scrollY);
+      const atTop = y < 60;
+      const atBottom = window.innerHeight + y >= document.documentElement.scrollHeight - 40;
+      if (atTop || atBottom) setHidden(false);
+      else if (y > lastY + 8) setHidden(true);
+      else if (y < lastY - 8) setHidden(false);
+      lastY = y;
+    });
+  }
+
+  function onFocusIn(e) {
+    if (!isTouchDevice || !app.contains(e.target) || !editable(e.target)) return;
+    clearTimeout(blurTimer);
+    body.classList.add('kb-open');
+  }
+  function onFocusOut() {
+    clearTimeout(blurTimer);
+    // 입력창 사이를 옮겨 다닐 때 메뉴가 깜박이지 않도록 잠시 기다린다.
+    blurTimer = setTimeout(() => {
+      if (!editable(document.activeElement) || !app.contains(document.activeElement)) body.classList.remove('kb-open');
+    }, 120);
+  }
+
+  // 키보드를 내림 버튼으로 닫으면 포커스가 남아 있는 경우가 있어 화면 높이로도 확인한다.
+  const vv = window.visualViewport;
+  let fullH = vv ? vv.height : window.innerHeight;
+  function onViewport() {
+    const h = vv ? vv.height : window.innerHeight;
+    if (h > fullH) fullH = h;
+    if (body.classList.contains('kb-open') && h > fullH - 80) {
+      body.classList.remove('kb-open');
+    } else if (!body.classList.contains('kb-open') && h < fullH - 150 && editable(document.activeElement) && app.contains(document.activeElement)) {
+      body.classList.add('kb-open');
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('focusin', onFocusIn);
+  document.addEventListener('focusout', onFocusOut);
+  vv?.addEventListener('resize', onViewport);
+  window.addEventListener('orientationchange', () => { setTimeout(() => { fullH = vv ? vv.height : window.innerHeight; }, 400); });
+
+  return {
+    reset() { lastY = window.scrollY; setHidden(false); if (!editable(document.activeElement)) body.classList.remove('kb-open'); },
+  };
+})();
+chromeReady = true;
+
 loadDraft();
 render();
 restoreSession();
