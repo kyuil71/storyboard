@@ -1756,7 +1756,7 @@ function renderInput() {
 
 // ── 화면 3: 스토리보드 ───────────────────────────────────────────
 function statusLabel(scene) {
-  if (scene.status === 'loading') return '<span class="scene-state wait">그리는 중…</span>';
+  if (scene.status === 'loading') return '';
   if (scene.status === 'done')    return '<span class="scene-state ok">완료</span>';
   if (scene.status === 'failed')  return '<span class="scene-state bad">실패</span>';
   if (scene.status === 'skipped') return '<span class="scene-state bad">건너뜀</span>';
@@ -1781,8 +1781,10 @@ function sceneCardHTML(scene, i) {
       (scene.error ? '<p class="scene-err">' + esc(scene.error) + '</p>' : '') +
       '<div class="scene-tools">' +
         '<button class="tool-btn" data-edit="' + i + '" ' + busy + '><i data-lucide="square-pen"></i> 수정</button>' +
-        '<button class="tool-btn" data-redraw="' + i + '" ' + busy + '><i data-lucide="refresh-cw"></i> 다시 그리기</button>' +
-        '<button class="tool-btn" data-prompt="' + i + '"><i data-lucide="code"></i> 프롬프트</button>' +
+        // 제작 중에는 '다시 그리기' · '프롬프트' 버튼을 숨긴다
+        (state.busy ? '' :
+          '<button class="tool-btn" data-redraw="' + i + '"><i data-lucide="refresh-cw"></i> 다시 그리기</button>' +
+          '<button class="tool-btn" data-prompt="' + i + '"><i data-lucide="code"></i> 프롬프트</button>') +
         (scene.imageUrl ? '<button class="tool-btn" data-save="' + i + '"><i data-lucide="download"></i> 이미지</button>' : '') +
       '</div>' +
     '</div></article>';
@@ -1813,14 +1815,14 @@ function renderBoard() {
   const progressBlock = working
     ? '<div class="card loading-card">' +
         (analyzing ? '<span class="spinner"></span>' : '') +
-        '<h2 class="display-title" style="margin-bottom:6px">' + (analyzing ? '시나리오 분석 중' : '스토리보드 작화 중') + '</h2>' +
+        '<h2 class="display-title" style="margin-bottom:6px">' + (analyzing ? '시나리오 분석 중' : '스토리보드 제작 중') + '</h2>' +
         '<div class="work-progress"><i id="progressBar" style="width:' +
           (state.progress.total ? Math.round((state.progress.current / state.progress.total) * 100) : 0) + '%"></i></div>' +
         '<div class="progress-caption" id="progressCaption">' +
           '<span>' + esc(state.progress.message || '') + '</span>' +
           '<span>' + state.progress.current + ' / ' + state.progress.total + '</span>' +
         '</div>' +
-        '<button class="btn btn-outline btn-small btn-full" data-act="cancel" style="margin-top:16px"><i data-lucide="square"></i> 중단하기</button>' +
+        '<div style="margin-top:16px;text-align:center"><button class="btn btn-outline btn-small" data-act="cancel" style="padding-left:22px;padding-right:22px"><i data-lucide="square"></i> 중단하기</button></div>' +
       '</div>'
     : '';
 
