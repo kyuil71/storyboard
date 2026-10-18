@@ -7,6 +7,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Storyboard">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>AI Storyboard Maker</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -49,7 +53,6 @@ a{color:inherit}[hidden]{display:none!important}
 .hdr-btn:active:not(:disabled){background:var(--s200)}
 .hdr-btn.strong{color:var(--s900)}
 .hdr-btn svg{width:24px;height:24px}
-.header-tail{display:contents}
 .hdr-progress{display:flex;align-items:center;gap:12px;padding:0 16px 8px}
 .hdr-progress .track{flex:1;height:6px;overflow:hidden;border-radius:999px;background:var(--s200)}
 .hdr-progress .track i{display:block;height:100%;border-radius:inherit;background:var(--blue);transition:width .35s var(--ease)}
@@ -59,9 +62,8 @@ a{color:inherit}[hidden]{display:none!important}
 
 /* 유동형 크롬 — 아래로 스크롤하거나 키보드가 열리면 상단 · 하단 메뉴가 비켜선다 */
 body.chrome-hide .app-header{transform:translateY(-100%)}
-body.chrome-hide .bottom-bar{transform:translate(-50%,110%)}
-/* 키보드가 열리면 자리까지 비워 입력창이 화면을 넓게 쓴다 */
-body.kb-open .app-header,body.kb-open .bottom-bar{display:none}
+/* 키보드가 열리면 상단 메뉴 자리까지 비워 입력창이 화면을 넓게 쓴다 */
+body.kb-open .app-header{display:none}
 
 /* ── 인트로 ── */
 .api-screen{display:flex;flex-direction:column;justify-content:center;padding:46px 32px calc(42px + env(safe-area-inset-bottom));text-align:center;background:#fff}
@@ -74,7 +76,7 @@ body.kb-open .app-header,body.kb-open .bottom-bar{display:none}
 .text-link span{font-size:18px;text-decoration:none}
 
 /* ── 카드 · 본문 ── */
-.content{padding:20px 16px 176px;background:#fff}
+.content{padding:20px 16px 26px;background:#fff}
 .card{margin:0 0 18px;padding:21px 19px;border:1px solid var(--s100);border-radius:var(--r-lg);background:#fff;box-shadow:0 8px 24px #0f172a0d}
 .card-dark{color:#fff;background:var(--navy);border-color:var(--navy);box-shadow:0 18px 40px #0f172a33}
 .eyebrow{margin-bottom:10px;color:var(--blue);font-size:16px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
@@ -96,7 +98,7 @@ body.kb-open .app-header,body.kb-open .bottom-bar{display:none}
 .btn-outline:hover:not(:disabled){border-color:var(--s300);background:var(--s50)}
 .btn-danger{color:var(--danger);background:var(--danger-bg);border:2px solid #ffd5d2}
 .btn-small{min-height:50px;padding:11px 15px;border-radius:var(--r-sm);font-size:17px}
-.bottom-bar{position:fixed;z-index:30;bottom:0;left:50%;width:min(100%,var(--frame));padding:14px 16px calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);transition:transform .28s var(--ease),visibility .28s;border-top:1px solid var(--s100);background:#fffffff2;backdrop-filter:blur(16px)}
+.bottom-bar{position:relative;padding:22px 16px calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--s100);background:var(--s50)}
 .bottom-stack{display:grid;gap:9px}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 
@@ -173,7 +175,7 @@ body.kb-open .app-header,body.kb-open .bottom-bar{display:none}
 .lightbox .icon-button{position:absolute;top:max(16px,env(safe-area-inset-top));right:16px;background:#ffffff1f;color:#fff}
 .toast{position:fixed;z-index:200;top:calc(18px + env(safe-area-inset-top));left:50%;width:min(calc(100% - 32px),398px);padding:15px 17px;transform:translateX(-50%);border-radius:var(--r-md);color:#fff;background:var(--s900);box-shadow:0 15px 35px #0f172a40;font-size:17px;font-weight:750;text-align:center;animation:toast-in .25s var(--ease) both}
 @keyframes toast-in{from{opacity:0;transform:translate(-50%,-10px)}}
-.foot-note{margin:26px 2px 0;color:var(--s500);font-size:16px;line-height:1.75;text-align:center}
+.foot-note{margin:20px 2px 0;color:var(--s500);font-size:16px;line-height:1.75;text-align:center}
 .foot-note button{color:var(--blue);font-weight:800;text-decoration:underline;text-underline-offset:3px}
 
 @media(max-width:380px){
@@ -182,47 +184,12 @@ body.kb-open .app-header,body.kb-open .bottom-bar{display:none}
   .count-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
-/* ══ PDF 페이지 (A4 가로 · 1123×794px @96dpi) ══
-   html2canvas 는 object-fit / aspect-ratio 를 지원하지 않는다.
-   따라서 모든 이미지 상자는 JS 가 원본 비율로 계산한 px 값을 직접 받는다. */
-#pdf-root{position:absolute;top:0;left:-5000px;width:1123px;background:#fff}
-.px-page{position:relative;width:1123px;height:794px;padding:44px 54px 62px;background:#fff;color:#0f172a;overflow:hidden;
-  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.px-head{display:flex;align-items:flex-end;justify-content:space-between;height:66px;padding-bottom:12px;margin-bottom:0;border-bottom:2px solid #0f172a}
-.px-head h2{margin:0;font-size:24px;font-weight:900;letter-spacing:-.03em}
-.px-kicker{font-size:14px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#2563eb}
-.px-body{padding-top:24px}
-.px-foot{position:absolute;left:54px;right:54px;bottom:22px;display:flex;justify-content:space-between;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8}
-.px-cover-title{margin:0 0 6px;font-size:62px;font-weight:900;font-style:italic;line-height:1.04;letter-spacing:-.055em}
-.px-cover-sub{margin:0 0 26px;font-size:17px;font-weight:700;color:#5b6b80;letter-spacing:.02em}
-.px-scenario{margin:0;padding-left:20px;border-left:4px solid #e2e8f0;font-size:16px;line-height:1.85;white-space:pre-wrap;word-break:break-word;overflow:hidden}
-
-/* 이미지 상자 — 크기는 인라인 스타일로만 지정된다 */
-.px-box{display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f8fafc;color:#94a3b8;font-size:13px;text-align:center}
-.px-box img{display:block}
-
-.px-contact{font-size:0}
-.px-cell{display:inline-block;vertical-align:top;border:1px solid #e2e8f0;background:#fff;overflow:hidden}
-.px-cap{display:flex;gap:8px;align-items:baseline;padding:8px 10px;border-top:1px solid #e2e8f0;overflow:hidden}
-.px-cap b{font-size:13px;font-weight:900;color:#2563eb;letter-spacing:.04em;flex:0 0 auto}
-.px-cap span{font-size:13px;line-height:1.45;color:#475569;overflow:hidden}
-
-.px-row{display:flex;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #f1f5f9}
-.px-row h3{margin:0 0 7px;font-size:17px;font-weight:900;color:#2563eb;letter-spacing:.04em}
-.px-row p{margin:0;font-size:15px;line-height:1.7;color:#334155;word-break:break-word}
-
-.px-solo{display:flex}
-.px-side{display:flex;flex-direction:column}
-.px-side h3{margin:0 0 14px;font-size:34px;font-weight:900;letter-spacing:-.04em}
-.px-side p{margin:0;font-size:17px;line-height:1.8;color:#334155;word-break:break-word}
-.px-prompt{margin-top:auto;padding-top:14px;border-top:1px solid #e2e8f0;font-size:10px;line-height:1.55;color:#94a3b8;word-break:break-all;font-family:ui-monospace,Menlo,monospace}
 </style>
 </head>
 <body>
 <div id="app" class="app-frame" aria-live="polite"></div>
 <div id="modal" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
-<div id="pdf-root" aria-hidden="true"></div>
 <noscript>이 프로그램을 사용하려면 브라우저의 JavaScript를 켜 주세요.</noscript>
 
 <script>
@@ -238,7 +205,6 @@ const IMAGE_MODEL = 'models/gemini-nano-banana-2.1';
 
 const PDF_LIBS = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
 ];
 
 // 이미지 스타일 프리셋
@@ -512,9 +478,31 @@ function fullPrompt(scene) {
   return sig ? sig.replace(/\.?$/, '.') + ' ' + body : body;
 }
 
-async function generateImage(prompt, signal) {
+// 주인공 참조 이미지 — 1번 컷(없으면 먼저 완성된 컷)을 다음 컷에 함께 보내
+// 얼굴 · 머리 · 옷이 컷마다 바뀌지 않게 한다. 입력 토큰이라 비용은 장당 0.002달러 안팎이다.
+const REF_NOTE = 'The attached image is a CHARACTER REFERENCE ONLY. Draw exactly the same person with the same face, ' +
+  'hairstyle, body type and clothing, in the same visual style. Do NOT copy the reference composition, pose, background ' +
+  'or camera angle; create the completely new scene described next. Scene: ';
+
+function parseDataUrl(url) {
+  const m = /^data:([^;,]+);base64,(.+)$/.exec(String(url || ''));
+  return m ? { mimeType: m[1], data: m[2] } : null;
+}
+
+function referenceFor(index) {
+  const first = state.scenes[0];
+  if (index !== 0 && first?.status === 'done' && first.imageUrl) return first.imageUrl;
+  const other = state.scenes.find((s, k) => k !== index && s.status === 'done' && s.imageUrl);
+  return other ? other.imageUrl : null;
+}
+
+async function generateImage(prompt, signal, refUrl) {
+  const ref = parseDataUrl(refUrl);
+  const parts = ref
+    ? [{ inlineData: ref }, { text: REF_NOTE + prompt + ' --aspect_ratio 4:3' }]
+    : [{ text: prompt + ' --aspect_ratio 4:3' }];
   const data = await callGemini(IMAGE_MODEL, {
-    contents: [{ parts: [{ text: prompt + ' --aspect_ratio 4:3' }] }],
+    contents: [{ role: 'user', parts }],
     generationConfig: { responseModalities: ['IMAGE'] },
   }, signal);
 
@@ -543,7 +531,7 @@ async function regeneratePrompt(scene, signal) {
   const user = [
     '[CHARACTER SIGNATURE — for context only, do not repeat]', state.characterFeatures || '(none)', '',
     '[SCENE DESCRIPTION]', scene.description, '',
-    '[REVISION INSTRUCTION]', scene.imageInstruction || '(no specific instruction — improve clarity and composition)',
+    '[REVISION INSTRUCTION]', scene.imageInstruction || '(no specific instruction — follow the scene description exactly)',
   ].join('\n');
 
   const data = await callGemini(TEXT_MODEL, {
@@ -637,16 +625,19 @@ async function drawScenes(indices, signal) {
       return;
     }
 
+    if (n > 0) {
+      setProgress(n, indices.length, '다음 컷을 준비하는 중…');
+      await sleep(SCENE_GAP_MS, signal);
+    }
+
     scene.status = 'loading';
     scene.error = null;
     patchScene(i);
     setProgress(n + 1, indices.length, 'SCENE #' + String(scene.id).padStart(2, '0') + ' 그리는 중…');
 
-    if (n > 0) await sleep(SCENE_GAP_MS, signal);
-
     try {
       const url = await withRetry(
-        () => generateImage(fullPrompt(scene), signal), signal,
+        () => generateImage(fullPrompt(scene), signal, referenceFor(i)), signal,
         (sec, k) => setProgressMessage('요청이 밀려 ' + sec + '초 뒤 재시도합니다 (' + k + '/' + MAX_RETRY + ')…'));
       scene.imageUrl = url; scene.status = 'done'; scene.error = null;
       streak = 0;
@@ -712,20 +703,38 @@ async function redrawOne(index, newDescription, newInstruction) {
   state.phase = 'drawing';
   state.banner = null;
 
+  const label = 'SCENE #' + String(scene.id).padStart(2, '0');
+  const prevUrl = scene.imageUrl;
+  const prevDesc = scene.description;
   if (typeof newDescription === 'string') scene.description = newDescription.trim() || scene.description;
-  if (typeof newInstruction === 'string') scene.imageInstruction = newInstruction.trim();
-  scene.status = 'loading'; scene.error = null; scene.imageUrl = null;
+  const instruction = typeof newInstruction === 'string' ? newInstruction.trim() : '';
+  if (typeof newInstruction === 'string') scene.imageInstruction = instruction;
+  // 설명이 바뀌었거나 새 수정 지시가 있을 때만 이미지 프롬프트를 다시 쓴다 (텍스트 호출 절약)
+  const rewrite = !!instruction || scene.description !== prevDesc;
+  scene.status = 'loading'; scene.error = null;
+  state.progress = { current: 0, total: 1, message: label + (rewrite ? ' 프롬프트를 고치는 중…' : ' 다시 그리는 중…') };
   render();
   acquireWakeLock();
 
   try {
-    if (scene.imageInstruction) scene.imagePrompt = await withRetry(() => regeneratePrompt(scene, signal), signal);
-    scene.imageUrl = await withRetry(() => generateImage(fullPrompt(scene), signal), signal);
+    if (rewrite) {
+      scene.imagePrompt = await withRetry(() => regeneratePrompt(scene, signal), signal);
+      setProgressMessage(label + ' 다시 그리는 중…');
+    }
+    scene.imageUrl = await withRetry(() => generateImage(fullPrompt(scene), signal, referenceFor(index)), signal,
+      (sec, k) => setProgressMessage('요청이 밀려 ' + sec + '초 뒤 재시도합니다 (' + k + '/' + MAX_RETRY + ')…'));
     scene.status = 'done'; scene.error = null;
-    toast('SCENE #' + String(scene.id).padStart(2, '0') + ' 를 다시 그렸습니다.');
+    setProgress(1, 1, label + ' 완료');
+    toast(label + ' 를 다시 그렸습니다.');
   } catch (err) {
-    scene.status = 'failed'; scene.imageUrl = null;
-    scene.error = err?.name === 'AbortError' ? '작업이 중단되었습니다.' : explainError(err);
+    const why = err?.name === 'AbortError' ? '작업이 중단되었습니다.' : explainError(err);
+    if (prevUrl) {
+      // 새 이미지를 못 받았으면 이전 이미지를 그대로 살려 둔다
+      scene.imageUrl = prevUrl; scene.status = 'done';
+      scene.error = '다시 그리지 못해 이전 이미지를 유지했습니다. ' + why;
+    } else {
+      scene.imageUrl = null; scene.status = 'failed'; scene.error = why;
+    }
   } finally {
     state.busy = false; state.abort = null; state.phase = 'done';
     releaseWakeLock(); render(); saveDraft();
@@ -1066,177 +1075,295 @@ function openEditSheet(index) {
 // ══════════════════════════════════════════════════════════════════
 // PDF — A4 가로, 파일 직접 생성 (인쇄 대화상자 없음)
 //
-// html2canvas 는 object-fit / aspect-ratio 를 무시하고 <img> 를 상자 크기로
-// 늘려 버린다. 그래서 이미지의 실제 픽셀 크기를 먼저 재고, 원본 비율을 유지한
-// px 값을 인라인 스타일로 직접 지정한다.
+// 예전에는 HTML 을 html2canvas 로 찍었는데, 표지 제목이 부제와 겹치고
+// 전체 컷(컨택트 시트) 페이지가 빈 칸으로 찍히는 문제가 있었다.
+// 이제는 각 페이지를 캔버스에 직접 그린다. 글자 줄바꿈 · 이미지 비율 ·
+// 넘치는 글 말줄임을 모두 코드가 계산하므로 겹침이나 누락이 생기지 않는다.
 // ══════════════════════════════════════════════════════════════════
-const PAGE_W = 1123, PAGE_H = 794;
-const PAD_X = 54, PAD_T = 44, PAD_B = 62, HEAD_H = 66, BODY_TOP = 24;
-const AREA_W = PAGE_W - PAD_X * 2;                       // 1015
-const AREA_H = PAGE_H - PAD_T - PAD_B - HEAD_H - BODY_TOP; // 598
+const PAGE_W = 1123, PAGE_H = 794;          // A4 가로 @96dpi (CSS px)
+const PDF_SCALE = 2;                         // 실제 캔버스 해상도 배수
+const PAD_X = 54, PAD_T = 44, PAD_B = 62;
+const HEAD_H = 66, BODY_GAP = 24;
+const AREA_X = PAD_X, AREA_W = PAGE_W - PAD_X * 2;            // 1015
+const AREA_Y = PAD_T + HEAD_H + BODY_GAP;                      // 134
+const AREA_H = PAGE_H - PAD_B - AREA_Y;                        // 598
+const FONT = 'Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+const C = { ink: '#0f172a', body: '#334155', sub: '#475569', muted: '#5b6b80', faint: '#94a3b8', line: '#e2e8f0', soft: '#f8fafc', blue: '#2563eb' };
 
-function chunkText(text, perPage = 1500) {
-  const src = String(text || '');
-  if (src.length <= perPage) return [src];
-  const out = [];
-  let rest = src;
-  while (rest.length) {
-    if (rest.length <= perPage) { out.push(rest); break; }
-    let cut = rest.lastIndexOf('\n', perPage);
-    if (cut < perPage * 0.5) cut = rest.lastIndexOf(' ', perPage);
-    if (cut < perPage * 0.5) cut = perPage;
-    out.push(rest.slice(0, cut));
-    rest = rest.slice(cut).replace(/^\s+/, '');
-  }
-  return out;
+function font(weight, size, family = FONT, style = '') { return (style ? style + ' ' : '') + weight + ' ' + size + 'px ' + family; }
+function setSpacing(ctx, px) { if ('letterSpacing' in ctx) ctx.letterSpacing = px + 'px'; }
+
+// 한국어는 띄어쓰기 단위로 줄을 바꾸고, 한 단어가 너무 길면 글자 단위로 자른다.
+function wrapText(ctx, text, maxW) {
+  const lines = [];
+  String(text || '').replace(/\r/g, '').split('\n').forEach(para => {
+    if (!para.trim()) { lines.push(''); return; }
+    let line = '';
+    para.split(/(\s+)/).forEach(tok => {
+      if (!tok) return;
+      const next = line + tok;
+      if (ctx.measureText(next).width <= maxW) { line = next; return; }
+      if (line.trim()) lines.push(line.replace(/\s+$/, ''));
+      line = /^\s+$/.test(tok) ? '' : tok;
+      while (ctx.measureText(line).width > maxW) {
+        let k = line.length - 1;
+        while (k > 1 && ctx.measureText(line.slice(0, k)).width > maxW) k--;
+        lines.push(line.slice(0, k));
+        line = line.slice(k);
+      }
+    });
+    if (line.trim()) lines.push(line.replace(/\s+$/, ''));
+  });
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
+  return lines;
 }
 
-function clip(text, max) {
-  const t = String(text || '');
-  return t.length > max ? t.slice(0, max).trim() + '…' : t;
+function ellipsize(ctx, line, maxW) {
+  if (ctx.measureText(line + '…').width <= maxW) return line + '…';
+  let t = line;
+  while (t.length && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+  return t.replace(/\s+$/, '') + '…';
 }
 
-// 이미지 원본 픽셀 크기를 잰다. 실패하면 4:3 으로 가정한다.
-function measureImage(dataUrl) {
+// 최대 줄 수를 넘으면 마지막 줄을 말줄임 처리한다. 그린 높이를 돌려준다.
+function drawLines(ctx, lines, x, y, lineH, maxLines, maxW) {
+  const shown = lines.slice(0, maxLines);
+  if (lines.length > maxLines && shown.length) shown[shown.length - 1] = ellipsize(ctx, shown[shown.length - 1], maxW);
+  shown.forEach((ln, k) => ctx.fillText(ln, x, y + k * lineH));
+  return shown.length * lineH;
+}
+
+function loadImageEl(src) {
   return new Promise(resolve => {
-    if (!dataUrl) { resolve(null); return; }
-    let settled = false;
-    const done = v => { if (!settled) { settled = true; clearTimeout(timer); resolve(v); } };
-    // load 도 error 도 오지 않는 경우가 있으므로 상한을 둔다.
-    const timer = setTimeout(() => done({ w: 4, h: 3 }), 5000);
+    if (!src) { resolve(null); return; }
+    let done = false;
+    const finish = v => { if (!done) { done = true; clearTimeout(t); resolve(v); } };
+    const t = setTimeout(() => finish(null), 8000);
     const im = new Image();
-    im.onload = () => done({ w: im.naturalWidth || 4, h: im.naturalHeight || 3 });
-    im.onerror = () => done({ w: 4, h: 3 });
-    im.src = dataUrl;
+    im.onload = () => finish(im.naturalWidth ? im : null);
+    im.onerror = () => finish(null);
+    im.src = src;
   });
 }
 
-// 원본 비율을 유지한 채 상자 안에 들어가는 최대 크기 (letterbox)
-function fitInside(nat, boxW, boxH) {
-  const ratio = (nat && nat.h) ? nat.w / nat.h : 4 / 3;
-  let w = boxW;
-  let h = w / ratio;
-  if (h > boxH) { h = boxH; w = h * ratio; }
-  return { w: Math.max(1, Math.round(w)), h: Math.max(1, Math.round(h)) };
-}
-
-// 이미지 상자 하나. 상자 크기와 이미지 크기를 모두 px 로 못 박는다.
-function pxBox(scene, nat, boxW, boxH, extraStyle) {
-  const style = 'width:' + boxW + 'px;height:' + boxH + 'px;' + (extraStyle || '');
-  if (!scene.imageUrl) {
-    return '<div class="px-box" style="' + style + '"><span>이미지 없음</span></div>';
+// 상자 안에 원본 비율 그대로 넣는다 (남는 곳은 옅은 회색 여백).
+function drawImageBox(ctx, img, x, y, w, h, opts = {}) {
+  ctx.save();
+  ctx.fillStyle = C.soft;
+  ctx.fillRect(x, y, w, h);
+  if (img) {
+    const r = img.naturalWidth / img.naturalHeight;
+    let dw = w, dh = w / r;
+    if (dh > h) { dh = h; dw = h * r; }
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  } else {
+    ctx.fillStyle = C.faint;
+    ctx.font = font(700, 14);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('이미지 없음', x + w / 2, y + h / 2);
   }
-  const f = fitInside(nat, boxW, boxH);
-  return '<div class="px-box" style="' + style + '">' +
-    '<img src="' + esc(scene.imageUrl) + '" alt="" style="width:' + f.w + 'px;height:' + f.h + 'px">' +
-    '</div>';
+  if (opts.border !== false) {
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.strokeRect(x + .5, y + .5, w - 1, h - 1);
+  }
+  ctx.restore();
 }
 
-function pxFoot(page) {
-  return '<div class="px-foot"><span>AI Storyboard Maker</span><span>' + esc(page) + '</span></div>';
-}
-function pxHead(title, kicker) {
-  return '<div class="px-head"><h2>' + esc(title) + '</h2><span class="px-kicker">' + esc(kicker) + '</span></div>';
+function newPage() {
+  const cv = document.createElement('canvas');
+  cv.width = PAGE_W * PDF_SCALE; cv.height = PAGE_H * PDF_SCALE;
+  const ctx = cv.getContext('2d');
+  ctx.scale(PDF_SCALE, PDF_SCALE);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+  ctx.textBaseline = 'alphabetic';
+  return { cv, ctx };
 }
 
-// A4 가로 페이지 DOM 을 만들고 요소 배열을 돌려준다.
-async function buildPdfPages() {
-  const root = $('#pdf-root');
+function drawHead(ctx, title, kicker) {
+  const base = PAD_T + HEAD_H - 14;
+  ctx.save();
+  let kw = 0;
+  if (kicker) {
+    ctx.font = font(800, 14); setSpacing(ctx, 2.2);
+    const k = String(kicker).toUpperCase();
+    kw = ctx.measureText(k).width;
+    ctx.fillStyle = C.blue; ctx.textAlign = 'right';
+    ctx.fillText(k, PAGE_W - PAD_X, base);
+  }
+  ctx.textAlign = 'left'; ctx.fillStyle = C.ink; ctx.font = font(900, 24); setSpacing(ctx, -0.5);
+  const maxTitle = AREA_W - kw - 30;
+  const t = ctx.measureText(title).width > maxTitle ? ellipsize(ctx, title, maxTitle) : title;
+  ctx.fillText(t, PAD_X, base);
+  ctx.fillRect(PAD_X, PAD_T + HEAD_H, AREA_W, 2);
+  ctx.restore();
+}
+
+function drawFoot(ctx, label) {
+  ctx.save();
+  ctx.font = font(700, 13); setSpacing(ctx, 1.3); ctx.fillStyle = C.faint;
+  ctx.textAlign = 'left'; ctx.fillText('AI STORYBOARD MAKER', PAD_X, PAGE_H - 22);
+  ctx.textAlign = 'right'; ctx.fillText(String(label).toUpperCase(), PAGE_W - PAD_X, PAGE_H - 22);
+  ctx.restore();
+}
+
+function sceneNo(s) { return String(s.id).padStart(2, '0'); }
+
+async function ensureFonts() {
+  if (!document.fonts?.load) return;
+  const sample = '가나다 Storyboard 0123';
+  try {
+    await Promise.race([
+      Promise.all([400, 700, 800, 900].map(w => document.fonts.load(w + ' 20px Pretendard', sample))),
+      sleep(4000),
+    ]);
+  } catch (_) { /* 기본 글꼴로 대체 */ }
+}
+
+// 페이지 캔버스 배열을 만든다. onPage(n) 으로 진행 상황을 알린다.
+async function buildPdfCanvases(onPage) {
+  await ensureFonts();
   const scenes = state.scenes;
-  const sizes = await Promise.all(scenes.map(s => measureImage(s.imageUrl)));
+  const imgs = await Promise.all(scenes.map(s => loadImageEl(s.imageUrl)));
   const pages = [];
+  const push = pg => { pages.push(pg.cv); onPage?.(pages.length); };
 
-  // 1) 표지 — 시나리오가 길면 자동 분할
-  chunkText(state.scenario, 1500).forEach((chunk, i) => {
-    pages.push(
-      '<section class="px-page">' +
-        (i === 0
-          ? '<div style="height:' + (HEAD_H + BODY_TOP) + 'px">' +
-              '<h1 class="px-cover-title">Storyboard<br>Maker</h1></div>' +
-            '<p class="px-cover-sub">' + esc(styleOf().label) + ' · ' + scenes.length + '컷 · ' + esc(stamp()) + '</p>' +
-            '<p class="px-scenario" style="max-height:' + (AREA_H - 60) + 'px">' + esc(chunk) + '</p>'
-          : pxHead('Project Scenario', 'Continued') +
-            '<div class="px-body"><p class="px-scenario" style="max-height:' + AREA_H + 'px">' + esc(chunk) + '</p></div>') +
-        pxFoot('Cover') +
-      '</section>');
-  });
+  // 1) 표지 — 제목 · 부제 · 시나리오 (길면 다음 장으로 이어짐)
+  {
+    const TEXT_X = PAD_X + 24, TEXT_W = AREA_W - 24, LH = 30;
+    let pg = newPage(), ctx = pg.ctx;
+    ctx.fillStyle = C.ink; ctx.font = font(900, 58, FONT, 'italic'); setSpacing(ctx, -2);
+    ctx.fillText('Storyboard Maker', PAD_X, PAD_T + 56);
+    setSpacing(ctx, 0.3);
+    ctx.fillStyle = C.muted; ctx.font = font(700, 17);
+    ctx.fillText(styleOf().label + ' · ' + scenes.length + '컷 · ' + stamp(), PAD_X, PAD_T + 96);
+    ctx.font = font(400, 16); setSpacing(ctx, 0);
+    const lines = wrapText(ctx, state.scenario || '(시나리오 없음)', TEXT_W);
+    let y = PAD_T + 146, page = 1;
+    const bottom = PAGE_H - PAD_B - 10;
+    let barTop = y - 20;
+    const flushBar = (yEnd) => { ctx.fillStyle = C.line; ctx.fillRect(PAD_X, barTop, 4, Math.max(0, yEnd - barTop - 14)); };
+    for (const ln of lines) {
+      if (y > bottom) {
+        flushBar(y); drawFoot(ctx, 'Cover'); push(pg);
+        pg = newPage(); ctx = pg.ctx; page++;
+        drawHead(ctx, 'Project Scenario', 'Continued ' + page);
+        ctx.font = font(400, 16); ctx.fillStyle = C.body;
+        y = AREA_Y + 22; barTop = y - 20;
+      }
+      ctx.fillStyle = C.body; ctx.font = font(400, 16);
+      ctx.fillText(ln, TEXT_X, y);
+      y += LH;
+    }
+    flushBar(y); drawFoot(ctx, 'Cover'); push(pg);
+  }
 
-  // 2) 컨택트 시트 — 모든 컷을 한 장에 (원본 비율 유지)
+  // 2) 컨택트 시트 — 모든 컷을 한 장에
   if (scenes.length) {
-    const cols = scenes.length <= 2 ? 2 : scenes.length <= 6 ? 3 : 4;
-    const rows = Math.ceil(scenes.length / cols);
-    const GAP = 16, CAP_H = 44, BORDER = 2;
+    const n = scenes.length;
+    const cols = n === 4 ? 2 : n <= 3 ? n : n <= 6 ? 3 : 4;   // 3컷은 한 줄, 4컷은 2×2
+    const rows = Math.ceil(n / cols);
+    const GAP = 16, CAP_H = n <= 4 ? 64 : 58;
     const cellW = Math.floor((AREA_W - GAP * (cols - 1)) / cols);
     const cellH = Math.floor((AREA_H - GAP * (rows - 1)) / rows);
-    const boxW = cellW - BORDER;
-    const boxH = Math.max(40, cellH - CAP_H - BORDER);
-
-    const cells = scenes.map((s, i) => {
-      const lastCol = (i % cols) === cols - 1;
-      const lastRow = Math.floor(i / cols) === rows - 1;
-      const margin = 'margin-right:' + (lastCol ? 0 : GAP) + 'px;margin-bottom:' + (lastRow ? 0 : GAP) + 'px';
-      return '<div class="px-cell" style="width:' + cellW + 'px;' + margin + '">' +
-        pxBox(s, sizes[i], boxW, boxH, 'border-bottom:1px solid #e2e8f0') +
-        '<div class="px-cap" style="height:' + CAP_H + 'px">' +
-          '<b>#' + String(s.id).padStart(2, '0') + '</b>' +
-          '<span>' + esc(clip(s.description, 52)) + '</span>' +
-        '</div></div>';
-    }).join('');
-
-    pages.push(
-      '<section class="px-page">' +
-        pxHead('Storyboard · 전체 컷', 'Contact Sheet') +
-        '<div class="px-body px-contact">' + cells + '</div>' +
-        pxFoot('Contact Sheet') +
-      '</section>');
+    // 칸 모양에 상관없이 이미지 상자는 4:3 으로 맞추고, 전체 격자를 가운데 정렬한다
+    const usedW = Math.min(cellW, Math.round((cellH - CAP_H) * 4 / 3));
+    const imgH = Math.round(usedW * 3 / 4);
+    const offX = Math.floor((cellW - usedW) / 2);
+    const gridH = rows * (imgH + CAP_H) + GAP * (rows - 1);
+    const topY = AREA_Y + Math.max(0, Math.floor((AREA_H - gridH) / 2));
+    const { cv, ctx } = newPage();
+    drawHead(ctx, 'Storyboard · 전체 컷', 'Contact Sheet');
+    scenes.forEach((s, i) => {
+      const c = i % cols, r = Math.floor(i / cols);
+      const x = AREA_X + c * (cellW + GAP) + offX, y = topY + r * (imgH + CAP_H + GAP);
+      drawImageBox(ctx, imgs[i], x, y, usedW, imgH);
+      ctx.save();
+      ctx.font = font(900, 14); ctx.fillStyle = C.blue; setSpacing(ctx, .6);
+      ctx.fillText('#' + sceneNo(s), x, y + imgH + 22);
+      const tagW = ctx.measureText('#' + sceneNo(s)).width + 10;
+      setSpacing(ctx, 0);
+      ctx.font = font(400, 13.5); ctx.fillStyle = C.sub;
+      const lines = wrapText(ctx, s.description, usedW - tagW);
+      drawLines(ctx, lines, x + tagW, y + imgH + 22, 20, 2, usedW - tagW);
+      ctx.restore();
+    });
+    drawFoot(ctx, 'Contact Sheet');
+    push({ cv, ctx });
   }
 
-  // 3) 개요 — 가로 A4 한 장에 3행
-  const THUMB_W = 236, THUMB_H = 150, ROW_GAP = 22;
-  for (let i = 0; i < scenes.length; i += 3) {
-    const slice = scenes.slice(i, i + 3);
-    const rows = slice.map((s, k) =>
-      '<div class="px-row" style="' + (k === slice.length - 1 ? 'border-bottom:0;margin-bottom:0;padding-bottom:0' : '') + '">' +
-        pxBox(s, sizes[i + k], THUMB_W, THUMB_H, 'border:1px solid #e2e8f0;margin-right:' + ROW_GAP + 'px;flex:0 0 auto') +
-        '<div style="flex:1;min-width:0">' +
-          '<h3>SCENE #' + String(s.id).padStart(2, '0') + '</h3>' +
-          '<p>' + esc(s.description) + '</p>' +
-        '</div></div>').join('');
-    pages.push(
-      '<section class="px-page">' +
-        pxHead('Scenes Overview', (i + 1) + '–' + Math.min(i + 3, scenes.length) + ' / ' + scenes.length) +
-        '<div class="px-body">' + rows + '</div>' +
-        pxFoot('Overview') +
-      '</section>');
+  // 3) 개요 — 한 장에 3컷 (썸네일 + 설명)
+  {
+    const ROW_H = Math.floor(AREA_H / 3);
+    const TH_H = ROW_H - 30, TH_W = Math.round(TH_H * 4 / 3);
+    const TX = AREA_X + TH_W + 26, TW = AREA_W - TH_W - 26;
+    for (let i = 0; i < scenes.length; i += 3) {
+      const { cv, ctx } = newPage();
+      drawHead(ctx, 'Scenes Overview', (i + 1) + '–' + Math.min(i + 3, scenes.length) + ' / ' + scenes.length);
+      scenes.slice(i, i + 3).forEach((s, k) => {
+        const y = AREA_Y + k * ROW_H;
+        drawImageBox(ctx, imgs[i + k], AREA_X, y, TH_W, TH_H);
+        ctx.save();
+        ctx.font = font(900, 17); ctx.fillStyle = C.blue; setSpacing(ctx, .8);
+        ctx.fillText('SCENE #' + sceneNo(s), TX, y + 22);
+        setSpacing(ctx, 0);
+        ctx.font = font(400, 15.5); ctx.fillStyle = C.body;
+        drawLines(ctx, wrapText(ctx, s.description, TW), TX, y + 54, 27, Math.floor((TH_H - 50) / 27), TW);
+        ctx.restore();
+        if (k < 2 && i + k + 1 < scenes.length) { ctx.fillStyle = '#f1f5f9'; ctx.fillRect(AREA_X, y + ROW_H - 14, AREA_W, 1); }
+      });
+      drawFoot(ctx, 'Overview');
+      push({ cv, ctx });
+    }
   }
 
-  // 4) 컷별 상세 — 왼쪽 대형 이미지(원본 비율), 오른쪽 설명
-  const SIDE_W = 330, SOLO_GAP = 34;
-  const HERO_W = AREA_W - SIDE_W - SOLO_GAP;
-  scenes.forEach((s, i) => {
-    pages.push(
-      '<section class="px-page">' +
-        pxHead('SCENE #' + String(s.id).padStart(2, '0'), styleOf().label) +
-        '<div class="px-body px-solo">' +
-          pxBox(s, sizes[i], HERO_W, AREA_H, 'border:1px solid #e2e8f0;margin-right:' + SOLO_GAP + 'px;flex:0 0 auto') +
-          '<div class="px-side" style="width:' + SIDE_W + 'px;flex:0 0 ' + SIDE_W + 'px;height:' + AREA_H + 'px">' +
-            '<h3>#' + String(s.id).padStart(2, '0') + '</h3>' +
-            '<p>' + esc(s.description) + '</p>' +
-            '<div class="px-prompt">' + esc(clip(fullPrompt(s), 430)) + '</div>' +
-          '</div>' +
-        '</div>' +
-        pxFoot('Scene ' + s.id) +
-      '</section>');
-  });
-
-  root.innerHTML = pages.join('');
-  return $$('.px-page', root);
+  // 4) 컷별 상세 — 왼쪽 큰 이미지, 오른쪽 설명 + 프롬프트
+  {
+    const SIDE_W = 320, GAP = 34;
+    const HERO_W = AREA_W - SIDE_W - GAP;
+    const SX = AREA_X + HERO_W + GAP;
+    for (let i = 0; i < scenes.length; i++) {
+      const s = scenes[i];
+      const { cv, ctx } = newPage();
+      drawHead(ctx, 'SCENE #' + sceneNo(s), styleOf().label);
+      drawImageBox(ctx, imgs[i], AREA_X, AREA_Y, HERO_W, AREA_H);
+      ctx.save();
+      ctx.fillStyle = C.ink; ctx.font = font(900, 34); setSpacing(ctx, -1);
+      ctx.fillText('#' + sceneNo(s), SX, AREA_Y + 36);
+      setSpacing(ctx, 0);
+      // 프롬프트 영역 (아래쪽 고정)
+      ctx.font = font(400, 10.5, MONO);
+      const pLines = wrapText(ctx, fullPrompt(s), SIDE_W);
+      const P_LH = 15, P_MAX = 9;
+      const pH = Math.min(pLines.length, P_MAX) * P_LH;
+      const pTop = AREA_Y + AREA_H - pH;
+      ctx.fillStyle = C.line; ctx.fillRect(SX, pTop - 22, SIDE_W, 1);
+      ctx.fillStyle = C.faint;
+      drawLines(ctx, pLines, SX, pTop + 10, P_LH, P_MAX, SIDE_W);
+      // 설명 (프롬프트와 겹치지 않는 높이까지만)
+      ctx.font = font(400, 17); ctx.fillStyle = C.body;
+      const D_LH = 31, dTop = AREA_Y + 84;
+      const dMax = Math.max(1, Math.floor((pTop - 40 - dTop) / D_LH));
+      drawLines(ctx, wrapText(ctx, s.description, SIDE_W), SX, dTop, D_LH, dMax, SIDE_W);
+      ctx.restore();
+      drawFoot(ctx, 'Scene ' + s.id);
+      push({ cv, ctx });
+    }
+  }
+  return pages;
 }
 
-async function ensurePdfLibs() {
-  if (window.jspdf?.jsPDF && window.html2canvas) return;
-  await Promise.all(PDF_LIBS.map(loadScript));
-  if (!window.jspdf?.jsPDF || !window.html2canvas) throw new Error('PDF 라이브러리를 초기화하지 못했습니다.');
+function countPdfPages() {
+  // 표지 1장 + (긴 시나리오 연장분은 그리면서 늘어남) + 컨택트 시트 + 개요 + 상세
+  const n = state.scenes.length;
+  return 1 + (n ? 1 : 0) + Math.ceil(n / 3) + n;
+}
+
+async function ensurePdfLib() {
+  if (window.jspdf?.jsPDF) return;
+  await loadScript(PDF_LIBS[0]);
+  if (!window.jspdf?.jsPDF) throw new Error('PDF 라이브러리를 초기화하지 못했습니다.');
 }
 
 async function exportPdf() {
@@ -1251,40 +1378,35 @@ async function exportPdf() {
     bodyHTML:
       '<div style="padding:4px 0 2px">' +
         '<div class="work-progress" style="margin-top:6px"><i id="pdfBar" style="width:0%"></i></div>' +
-        '<div class="progress-caption"><span id="pdfMsg">라이브러리를 불러오는 중…</span><span id="pdfNum">0 / 0</span></div>' +
+        '<div class="progress-caption"><span id="pdfMsg">준비하는 중…</span><span id="pdfNum"></span></div>' +
       '</div>',
   });
   const step = (done, total, msg) => {
     const bar = $('#pdfBar'), m = $('#pdfMsg'), n = $('#pdfNum');
-    if (bar) bar.style.width = (total ? Math.round((done / total) * 100) : 0) + '%';
+    if (bar) bar.style.width = (total ? Math.min(100, Math.round((done / total) * 100)) : 0) + '%';
     if (m) m.textContent = msg;
-    if (n) n.textContent = done + ' / ' + total;
+    if (n) n.textContent = total ? done + ' / ' + total : '';
   };
 
   try {
-    await ensurePdfLibs();
-    const pages = await buildPdfPages();
-    step(0, pages.length, '페이지를 그리는 중…');
-    await new Promise(r => setTimeout(r, 150));
+    step(0, 0, 'PDF 라이브러리를 불러오는 중…');
+    await ensurePdfLib();
+    const expected = countPdfPages();
+    step(0, expected, '페이지를 그리는 중…');
+    const canvases = await buildPdfCanvases(k => step(k, Math.max(expected, k), '페이지를 그리는 중…'));
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-
-    for (let i = 0; i < pages.length; i++) {
-      const canvas = await window.html2canvas(pages[i], {
-        scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
-        width: PAGE_W, height: PAGE_H, windowWidth: PAGE_W, windowHeight: PAGE_H,
-      });
-      const img = canvas.toDataURL('image/jpeg', 0.92);
+    for (let i = 0; i < canvases.length; i++) {
       if (i > 0) pdf.addPage('a4', 'landscape');
-      pdf.addImage(img, 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
-      step(i + 1, pages.length, (i + 1) + ' / ' + pages.length + ' 페이지를 담는 중…');
+      pdf.addImage(canvases[i].toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
+      canvases[i].width = canvases[i].height = 1;   // 메모리 즉시 반환
+      step(i + 1, canvases.length, (i + 1) + ' / ' + canvases.length + ' 페이지를 담는 중…');
       await new Promise(r => setTimeout(r, 0));
     }
-
     pdf.save('storyboard-' + stamp() + '.pdf');
     sheet.close();
-    toast('PDF를 저장했습니다.');
+    toast('PDF를 저장했습니다 (' + canvases.length + '쪽).');
   } catch (err) {
     sheet.close();
     state.banner = {
@@ -1292,7 +1414,6 @@ async function exportPdf() {
       text: (err?.message || '알 수 없는 오류') + ' 네트워크가 차단된 환경이면 PDF 생성 라이브러리를 내려받지 못할 수 있습니다.',
     };
   } finally {
-    $('#pdf-root').innerHTML = '';
     state.busy = false;
     render();
   }
@@ -1309,7 +1430,7 @@ function bannerHTML() {
 }
 
 // 상단 메뉴 — 다른 분석 도구와 같은 형식: [이전] 제목 · [다음][저장][전체 화면][처음] + 진행 바
-function shell(stepNo, stepTitle, progressPct, contentHTML, bottomHTML) {
+function shell(stepNo, stepTitle, progressPct, contentHTML, bottomHTML, footHTML) {
   const canPrev = state.screen !== 'input';
   const canNext = state.screen !== 'board' && state.scenes.length > 0;
   const cuts = state.scenes.length ? ' · ' + state.scenes.length + '컷' : '';
@@ -1322,7 +1443,6 @@ function shell(stepNo, stepTitle, progressPct, contentHTML, bottomHTML) {
         '<div class="hdr-right">' +
           (canNext ? '<button class="hdr-btn strong" data-act="go-board" aria-label="다음 단계로"><i data-lucide="chevron-right"></i></button>' : '') +
           '<button class="hdr-btn" data-act="save-now" aria-label="진행 상태 저장"><i data-lucide="save"></i></button>' +
-          '<span class="header-tail"></span>' +
           '<button class="hdr-btn" data-act="go-home" aria-label="처음 화면으로"><i data-lucide="home"></i></button>' +
         '</div>' +
       '</div>' +
@@ -1332,7 +1452,9 @@ function shell(stepNo, stepTitle, progressPct, contentHTML, bottomHTML) {
       '</div>' +
     '</header>' +
     '<div class="content fade-in">' + contentHTML + '</div>' +
-    (bottomHTML ? '<div class="bottom-bar"><div class="bottom-stack">' + bottomHTML + '</div></div>' : '');
+    (bottomHTML || footHTML
+      ? '<div class="bottom-bar">' + (bottomHTML ? '<div class="bottom-stack">' + bottomHTML + '</div>' : '') + (footHTML || '') + '</div>'
+      : '');
 }
 
 // ── 화면 1: 인트로 ───────────────────────────────────────────────
@@ -1394,7 +1516,8 @@ function renderInput() {
     '</div>' +
     '<span class="sub-heading">이미지 스타일</span>' +
     '<div class="style-list">' + styleCards + '</div>' +
-    '<p class="helper">컷이 많을수록 오래 걸리고 요청 한도에 걸릴 가능성이 커집니다. 처음에는 4컷을 권합니다.</p>' +
+    '<p class="helper">컷이 많을수록 오래 걸리고 요청 한도에 걸릴 가능성이 커집니다. 처음에는 4컷을 권합니다.</p>';
+  const foot =
     '<p class="foot-note">시나리오는 데이터로만 처리되며, 안에 적힌 지시문은 실행되지 않습니다.<br>' +
       '<button data-act="change-key">API 키 변경</button></p>';
 
@@ -1407,7 +1530,7 @@ function renderInput() {
     '</div>' +
     '<input id="projectInput" type="file" accept="application/json,.json" hidden>';
 
-  app.innerHTML = shell(1, '시나리오 입력', state.scenario.trim() ? 50 : 12, content, bottom);
+  app.innerHTML = shell(1, '시나리오 입력', state.scenario.trim() ? 50 : 12, content, bottom, foot);
 
   $('#scenarioInput').addEventListener('input', e => {
     state.scenario = e.target.value;
@@ -1447,7 +1570,7 @@ function sceneCardHTML(scene, i) {
         '<button class="tool-btn" data-edit="' + i + '" ' + busy + '><i data-lucide="square-pen"></i> 수정</button>' +
         '<button class="tool-btn" data-redraw="' + i + '" ' + busy + '><i data-lucide="refresh-cw"></i> 다시 그리기</button>' +
         '<button class="tool-btn" data-prompt="' + i + '"><i data-lucide="code"></i> 프롬프트</button>' +
-        (scene.imageUrl ? '<button class="tool-btn" data-save="' + i + '"><i data-lucide="download"></i> PNG</button>' : '') +
+        (scene.imageUrl ? '<button class="tool-btn" data-save="' + i + '"><i data-lucide="download"></i> 이미지</button>' : '') +
       '</div>' +
     '</div></article>';
 }
@@ -1490,7 +1613,8 @@ function renderBoard() {
 
   const content =
     bannerHTML() + progressBlock +
-    (scenes.length ? '<div class="board-grid">' + scenes.map((s, i) => sceneCardHTML(s, i)).join('') + '</div>' : '') +
+    (scenes.length ? '<div class="board-grid">' + scenes.map((s, i) => sceneCardHTML(s, i)).join('') + '</div>' : '');
+  const foot =
     '<p class="foot-note"><span id="saveStatus">' + esc(saveStatusText()) + '</span><br>' +
       '생성된 이미지는 AI 합성 결과이며 실제 제품 · 인물과 무관합니다.</p>';
 
@@ -1505,7 +1629,7 @@ function renderBoard() {
     '</div>';
 
   const pct = scenes.length ? Math.round(((ok + bad) / scenes.length) * 100) : 60;
-  app.innerHTML = shell(2, working ? '스토리보드 만드는 중' : '스토리보드', pct, content, bottom);
+  app.innerHTML = shell(2, working ? '스토리보드 만드는 중' : '스토리보드', pct, content, bottom, foot);
 }
 
 function render() {
@@ -1513,7 +1637,6 @@ function render() {
   else if (state.screen === 'input') renderInput();
   else renderBoard();
   icons();
-  paintFullscreenButton();
   if (chromeReady) chromeCtl.reset();
 }
 
@@ -1534,7 +1657,11 @@ app.addEventListener('click', async e => {
   if (btn.dataset.redraw) { redrawOne(Number(btn.dataset.redraw)); return; }
   if (btn.dataset.save) {
     const s = state.scenes[Number(btn.dataset.save)];
-    if (s?.imageUrl) { downloadDataUrl(s.imageUrl, 'scene-' + String(s.id).padStart(2, '0') + '.png'); toast('이미지를 저장했습니다.'); }
+    if (s?.imageUrl) {
+      const ext = /^data:image\/(jpe?g)/i.test(s.imageUrl) ? 'jpg' : /^data:image\/webp/i.test(s.imageUrl) ? 'webp' : 'png';
+      downloadDataUrl(s.imageUrl, 'scene-' + String(s.id).padStart(2, '0') + '.' + ext);
+      toast('이미지를 저장했습니다.');
+    }
     return;
   }
 
@@ -1601,52 +1728,31 @@ window.addEventListener('beforeunload', e => {
 });
 
 // ══════════════════════════════════════════════════════════════════
-// 전체 화면 — 브라우저는 사용자 터치가 있어야만 전체 화면을 허용한다.
-// 스마트폰에서는 첫 터치 때 자동으로 전체 화면으로 들어간다.
+// 스마트폰 전체 화면 — 트렌드 인사이트 랩과 같은 방식
+// 브라우저는 사용자 터치 없이 전체 화면을 허용하지 않으므로 터치하는 순간 전환한다.
+// 파일 열기 · PDF 저장 · 새 탭 이동 등으로 풀려도 다음 터치 때 바로 다시 전환된다.
+// 아이폰은 웹페이지 전체 화면을 지원하지 않아 '홈 화면에 추가'로 실행해야 한다.
 // ══════════════════════════════════════════════════════════════════
-const fsEnabled = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
-const isTouchDevice = window.matchMedia?.('(pointer:coarse)').matches;
+const isTouchDevice = !!(window.matchMedia?.('(pointer:coarse)').matches || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent));
 
-function isFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
-
-function enterFullscreen() {
-  if (!fsEnabled || isFullscreen()) return;
-  const el = document.documentElement;
-  try {
-    const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen?.();
-    p?.catch?.(() => { /* 브라우저가 거부해도 앱은 그대로 동작 */ });
-  } catch (_) { /* noop */ }
-}
-function exitFullscreen() {
-  try {
-    const p = document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen?.();
-    p?.catch?.(() => {});
-  } catch (_) { /* noop */ }
-}
-function toggleFullscreen() { isFullscreen() ? exitFullscreen() : enterFullscreen(); }
-
-function paintFullscreenButton() {
-  const tail = app.querySelector('.header-tail');
-  if (!tail) return;
-  if (!fsEnabled) { tail.innerHTML = ''; return; }
-  const on = isFullscreen();
-  tail.innerHTML = '<button class="hdr-btn" data-act="fullscreen" aria-label="' +
-    (on ? '전체 화면 끝내기' : '전체 화면') + '"><i data-lucide="' + (on ? 'minimize' : 'maximize') + '"></i></button>';
-  icons();
-}
-
-if (fsEnabled && isTouchDevice) {
-  const firstTouch = () => {
-    document.removeEventListener('pointerup', firstTouch, true);
-    enterFullscreen();
+(function setupMobileFullscreen() {
+  const standalone = window.matchMedia?.('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone;
+  if (!isTouchDevice || standalone) return;
+  const root = document.documentElement;
+  const request = root.requestFullscreen || root.webkitRequestFullscreen;
+  if (!request) return;
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const enter = () => {
+    if (isFull()) return;
+    try {
+      const r = request.call(root, { navigationUI: 'hide' });
+      if (r && r.catch) r.catch(() => {});
+    } catch (_) { /* 무시 */ }
   };
-  document.addEventListener('pointerup', firstTouch, true);
-}
-document.addEventListener('fullscreenchange', paintFullscreenButton);
-document.addEventListener('webkitfullscreenchange', paintFullscreenButton);
-app.addEventListener('click', e => {
-  if (e.target.closest('[data-act="fullscreen"]')) toggleFullscreen();
-});
+  document.addEventListener('click', enter, true);
+  document.addEventListener('touchend', enter, { capture: true, passive: true });
+})();
+
 // ══════════════════════════════════════════════════════════════════
 // 유동형 상단 · 하단 메뉴
 // - 스마트폰에서 입력창에 키보드가 열리면 두 메뉴를 숨겨 입력 공간을 넓힌다.
