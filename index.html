@@ -1781,10 +1781,6 @@ function sceneCardHTML(scene, i) {
       (scene.error ? '<p class="scene-err">' + esc(scene.error) + '</p>' : '') +
       '<div class="scene-tools">' +
         '<button class="tool-btn" data-edit="' + i + '" ' + busy + '><i data-lucide="square-pen"></i> 수정</button>' +
-        // 제작 중에는 '다시 그리기' · '프롬프트' 버튼을 숨긴다
-        (state.busy ? '' :
-          '<button class="tool-btn" data-redraw="' + i + '"><i data-lucide="refresh-cw"></i> 다시 그리기</button>' +
-          '<button class="tool-btn" data-prompt="' + i + '"><i data-lucide="code"></i> 프롬프트</button>') +
         (scene.imageUrl ? '<button class="tool-btn" data-save="' + i + '"><i data-lucide="download"></i> 이미지</button>' : '') +
       '</div>' +
     '</div></article>';
