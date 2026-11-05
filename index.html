@@ -976,7 +976,7 @@ function applyProjectData(data) {
       imageInstruction: String(x.imageInstruction || ''),
       imageUrl: url,
       status: url ? 'done' : 'failed',
-      error: url ? null : '저장된 이미지가 없습니다. 다시 그려 주세요.',
+      error: null,   // 이미지가 없으면 칸에 '이미지 준비 중'이 표시된다
     };
   });
   state.phase = state.scenes.length ? 'done' : 'idle';
@@ -1333,7 +1333,7 @@ function drawImageBox(ctx, img, x, y, w, h, opts = {}) {
     ctx.fillStyle = C.faint;
     ctx.font = font(700, 14);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('이미지 없음', x + w / 2, y + h / 2);
+    ctx.fillText('이미지 준비 중', x + w / 2, y + h / 2);
   }
   if (opts.border !== false) {
     ctx.strokeStyle = C.line; ctx.lineWidth = 1;
