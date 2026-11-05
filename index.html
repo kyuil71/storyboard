@@ -1771,7 +1771,7 @@ function sceneCardHTML(scene, i) {
   } else if (scene.imageUrl) {
     figure = '<img src="' + esc(scene.imageUrl) + '" alt="SCENE ' + scene.id + ' 이미지" data-zoom="' + i + '">';
   } else {
-    figure = '<div class="scene-empty"><i data-lucide="image-off"></i>이미지가 없습니다</div>';
+    figure = '<div class="scene-empty"><i data-lucide="image"></i>이미지 준비 중</div>';
   }
   const busy = state.busy ? 'disabled' : '';
   return '<article class="scene-card" id="scene-' + i + '">' +
@@ -1844,6 +1844,15 @@ function renderBoard() {
   app.innerHTML = shell(2, working ? '스토리보드 만드는 중' : '스토리보드', pct, content, bottom, foot);
 }
 
+// 제작이 시작되거나 단계가 바뀌면(분석 → 그리기, 다시 그리기 시작) 화면 맨 위부터 보여 준다.
+let lastWorkView = '';
+function scrollToTopNow() {
+  const el = document.activeElement;
+  if (el && /^(INPUT|TEXTAREA)$/.test(el.tagName)) el.blur();   // 키보드가 열려 있으면 닫는다
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
+}
+
 function render() {
   if (state.screen === 'intro') renderIntro();
   else if (state.screen === 'home') renderHome();
@@ -1851,6 +1860,10 @@ function render() {
   else renderBoard();
   icons();
   if (chromeReady) chromeCtl.reset();
+  const work = state.screen === 'board' && state.busy && (state.phase === 'analyzing' || state.phase === 'drawing')
+    ? 'work:' + state.phase : '';
+  if (work && work !== lastWorkView) scrollToTopNow();
+  lastWorkView = work;
 }
 
 // ══════════════════════════════════════════════════════════════════
