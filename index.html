@@ -1431,33 +1431,67 @@ async function buildPdfCanvases(onPage) {
   }
 
   // 2) 컨택트 시트 — 모든 컷을 한 장에
+  //    설명이 잘리지 않도록 글자 크기와 이미지 칸 높이를 함께 계산한다.
+  //    설명은 칸 폭 전체를 쓰고, 이미지는 칸 안에 원본 비율 그대로 들어간다.
+  //    큰 글씨부터 시도하고, 들어가지 않으면 이미지 칸을 낮추거나 글씨를 한 단계 줄인다.
   if (scenes.length) {
     const n = scenes.length;
     const cols = n === 4 ? 2 : n <= 3 ? n : n <= 6 ? 3 : 4;   // 3컷은 한 줄, 4컷은 2×2
     const rows = Math.ceil(n / cols);
-    const GAP = 16, CAP_H = n <= 4 ? 64 : 58;
+    const GAP = 16, CAP_TOP = 10, CAP_BOTTOM = 4;
     const cellW = Math.floor((AREA_W - GAP * (cols - 1)) / cols);
-    const cellH = Math.floor((AREA_H - GAP * (rows - 1)) / rows);
-    // 칸 모양에 상관없이 이미지 상자는 4:3 으로 맞추고, 전체 격자를 가운데 정렬한다
-    const usedW = Math.min(cellW, Math.round((cellH - CAP_H) * 4 / 3));
-    const imgH = Math.round(usedW * 3 / 4);
-    const offX = Math.floor((cellW - usedW) / 2);
-    const gridH = rows * (imgH + CAP_H) + GAP * (rows - 1);
-    const topY = AREA_Y + Math.max(0, Math.floor((AREA_H - gridH) / 2));
+    const rowH = Math.floor((AREA_H - GAP * (rows - 1)) / rows);
+    const idealH = Math.min(Math.round(cellW * 3 / 4), rowH);   // 4:3 로 꽉 찬 이미지 칸 높이
     const { cv, ctx } = newPage();
     drawHead(ctx, 'Storyboard · 전체 컷', 'Contact Sheet');
+
+    const tagLabel = s => '#' + sceneNo(s);
+    function measure(fs) {
+      ctx.save();
+      ctx.font = font(900, fs); setSpacing(ctx, .6);
+      const tagW = Math.max(...scenes.map(s => ctx.measureText(tagLabel(s)).width)) + 8;
+      setSpacing(ctx, 0);
+      ctx.font = font(400, fs);
+      const lines = scenes.map(s => wrapText(ctx, s.description, cellW - tagW));
+      ctx.restore();
+      const lh = Math.round(fs * 1.5);
+      const maxLines = Math.max(1, ...lines.map(l => l.length));
+      return { fs, tagW, lines, lh, capH: CAP_TOP + maxLines * lh + CAP_BOTTOM };
+    }
+
+    let fit = null;
+    // 1차: 이미지 칸을 이상적 높이의 80% 이상 유지하면서 가장 큰 글씨 (12px 이상)
+    // 2차: 이미지 칸을 50%까지 낮추면서 글씨 9px까지
+    for (const [minRatio, minFs] of [[0.8, 12], [0.5, 9]]) {
+      for (let fs = 14; fs >= minFs && !fit; fs -= 0.5) {
+        const m = measure(fs);
+        const h = Math.min(idealH, rowH - m.capH);
+        if (h >= idealH * minRatio) fit = { m, h };
+      }
+      if (fit) break;
+    }
+    // 그래도 넘치면(설명이 아주 긴 경우) 가장 작은 설정으로 그리고 남는 줄만 말줄임
+    if (!fit) {
+      const m = measure(9), h = Math.round(idealH * 0.5);
+      m.maxLines = Math.max(1, Math.floor((rowH - h - CAP_TOP - CAP_BOTTOM) / m.lh));
+      m.capH = rowH - h;
+      fit = { m, h };
+    }
+
+    const { m, h: boxH } = fit;
+    const gridH = rows * (boxH + m.capH) + GAP * (rows - 1);
+    const topY = AREA_Y + Math.max(0, Math.floor((AREA_H - gridH) / 2));
     scenes.forEach((s, i) => {
       const c = i % cols, r = Math.floor(i / cols);
-      const x = AREA_X + c * (cellW + GAP) + offX, y = topY + r * (imgH + CAP_H + GAP);
-      drawImageBox(ctx, imgs[i], x, y, usedW, imgH);
+      const x = AREA_X + c * (cellW + GAP), y = topY + r * (boxH + m.capH + GAP);
+      drawImageBox(ctx, imgs[i], x, y, cellW, boxH);
+      const base = y + boxH + CAP_TOP + Math.round(m.fs * 1.05);
       ctx.save();
-      ctx.font = font(900, 14); ctx.fillStyle = C.blue; setSpacing(ctx, .6);
-      ctx.fillText('#' + sceneNo(s), x, y + imgH + 22);
-      const tagW = ctx.measureText('#' + sceneNo(s)).width + 10;
+      ctx.font = font(900, m.fs); ctx.fillStyle = C.blue; setSpacing(ctx, .6);
+      ctx.fillText(tagLabel(s), x, base);
       setSpacing(ctx, 0);
-      ctx.font = font(400, 13.5); ctx.fillStyle = C.sub;
-      const lines = wrapText(ctx, s.description, usedW - tagW);
-      drawLines(ctx, lines, x + tagW, y + imgH + 22, 20, 2, usedW - tagW);
+      ctx.font = font(400, m.fs); ctx.fillStyle = C.sub;
+      drawLines(ctx, m.lines[i], x + m.tagW, base, m.lh, m.maxLines || m.lines[i].length, cellW - m.tagW);
       ctx.restore();
     });
     drawFoot(ctx, 'Contact Sheet');
